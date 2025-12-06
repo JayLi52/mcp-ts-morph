@@ -8,7 +8,7 @@ import { getTsConfigPaths } from "./ts-morph-project";
 import logger from "../../utils/logger";
 
 /**
- * モジュール指定子が tsconfig で定義されたパスエイリアスを使用しているかチェックする
+ * 检查模块说明符是否使用了在 tsconfig 中定义的路径别名
  */
 function checkIsPathAlias(
 	specifier: string,
@@ -23,9 +23,9 @@ function checkIsPathAlias(
 }
 
 /**
- * ターゲットファイルを参照するすべての Import/Export 宣言を検索する。
- * ts-morph の getReferencingSourceFiles を使用。
- * 注意: バレルファイル (例: index.ts) 経由の再エクスポートによる参照は見つけられない可能性がある。
+ * 查找引用目标文件的所有 Import/Export 声明。
+ * 使用 ts-morph 的 getReferencingSourceFiles。
+ * 注意：通过桶文件（例如：index.ts）进行再导出的引用可能无法找到。
  */
 export async function findDeclarationsReferencingFile(
 	targetFile: SourceFile,
@@ -42,7 +42,7 @@ export async function findDeclarationsReferencingFile(
 		"Starting findDeclarationsReferencingFile using getReferencingSourceFiles",
 	);
 
-	// ts-morph の組み込みメソッドを使用して参照元ソースファイルを見つける
+	// 使用 ts-morph 的内置方法查找引用源的源文件
 	const referencingSourceFiles = targetFile.getReferencingSourceFiles();
 
 	logger.trace(
@@ -68,7 +68,7 @@ export async function findDeclarationsReferencingFile(
 				const moduleSpecifier = declaration.getModuleSpecifier();
 				if (!moduleSpecifier) continue;
 
-				// 宣言が *実際に* ターゲットファイルに解決されるか確認する
+				// 确认声明是否确实解析到目标文件
 				const specifierSourceFile = declaration.getModuleSpecifierSourceFile();
 
 				if (specifierSourceFile?.getFilePath() === targetFilePath) {

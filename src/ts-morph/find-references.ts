@@ -2,7 +2,7 @@ import type { Node, SourceFile } from "ts-morph";
 import { initializeProject } from "./_utils/ts-morph-project";
 import { findIdentifierNode } from "./rename-symbol/rename-symbol";
 
-// --- Data Structure for Result ---
+// --- 结果的数据结构 ---
 
 export interface ReferenceLocation {
 	filePath: string;
@@ -11,10 +11,10 @@ export interface ReferenceLocation {
 	text: string;
 }
 
-// --- Main Function ---
+// --- 主函数 ---
 
 /**
- * 指定された位置にあるシンボルの参照箇所をプロジェクト全体から検索する
+ * 在整个项目中查找指定位置的符号的所有引用位置
  */
 export async function findSymbolReferences({
 	tsconfigPath,
@@ -30,10 +30,10 @@ export async function findSymbolReferences({
 }> {
 	const project = initializeProject(tsconfigPath);
 
-	// targetFilePath は絶対パスである想定
+	// 假定 targetFilePath 为绝对路径
 	const identifierNode = findIdentifierNode(project, targetFilePath, position);
 
-	// findReferencesAsNodes() は定義箇所を含まない場合がある
+	// findReferencesAsNodes() 有时不包含定义位置
 	const referenceNodes: Node[] = identifierNode.findReferencesAsNodes();
 
 	let definitionLocation: ReferenceLocation | null = null;
@@ -68,7 +68,7 @@ export async function findSymbolReferences({
 			refLine === definitionLocation.line &&
 			refColumn === definitionLocation.column
 		) {
-			continue; // 定義箇所と同じであればスキップ
+			continue; // 若与定义位置相同则跳过
 		}
 
 		if (refLine === undefined || refColumn === undefined) continue;
@@ -95,14 +95,14 @@ export async function findSymbolReferences({
 }
 
 function getLineText(sourceFile: SourceFile, lineNumber: number): string {
-	// ファイル全体のテキストを取得し、行で分割して該当行を返す
+	// 获取文件全文文本，按行分割并返回对应行
 	const lines = sourceFile.getFullText().split(/\r?\n/);
-	// lineNumber は 1-based なので、インデックスは lineNumber - 1
+	// lineNumber 为 1 基，索引为 lineNumber - 1
 	if (lineNumber > 0 && lineNumber <= lines.length) {
 		return lines[lineNumber - 1];
 	}
-	// 該当行が見つからない場合、エラーとするか、空文字列を返すかなどの仕様による
-	// ここではエラーを投げるのが自然かもしれない
+	// 找不到对应行时，是抛错还是返回空字符串取决于约定
+	// 这里更自然的做法是抛出错误
 	throw new Error(
 		`Line ${lineNumber} not found in file ${sourceFile.getFilePath()}`,
 	);

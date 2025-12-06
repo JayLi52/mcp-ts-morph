@@ -10,4 +10,4 @@ export interface InterfaceA {
 	name: string;
 }
 
-// Add more complex scenarios later if needed
+// 如有需要，后续可添加更复杂的场景

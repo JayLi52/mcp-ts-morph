@@ -1,16 +1,16 @@
-import { valueA } from "./moduleA"; // moduleA への依存
+import { valueA } from "./moduleA"; // 依赖 moduleA
 
-// エクスポートされる関数
+// 导出的函数
 export function utilFunc1(): void {
 	console.log("Util Func 1 executed with value:", valueA);
 }
 
-// エクスポートされない内部ヘルパー関数
+// 不导出的内部辅助函数
 function internalUtil(): string {
 	return "Internal Util Result";
 }
 
-// 内部ヘルパー関数を利用する別のエクスポート関数
+// 使用内部辅助函数的另一个导出函数
 export function utilFunc2(): string {
 	const internalResult = internalUtil();
 	return `Util Func 2 using ${internalResult}`;

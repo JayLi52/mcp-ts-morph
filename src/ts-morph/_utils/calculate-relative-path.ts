@@ -11,12 +11,12 @@ const DEFAULT_EXTENSIONS_TO_REMOVE = [
 ];
 
 /**
- * モジュール指定子用の相対パスを計算する
- * fromPath: 参照元ファイルの絶対パス
- * toPath: 参照先ファイルの絶対パス
- * @param options.simplifyIndex /index で終わるパスを簡略化するかどうか (デフォルト: true)
- * @param options.removeExtensions 削除する拡張子のリスト、trueの場合はデフォルトリスト、falseの場合は削除しない (デフォルト: DEFAULT_EXTENSIONS_TO_REMOVE)
- * @returns POSIX 形式の相対パス (./ や ../ で始まる)
+ * 计算用于模块说明符的相对路径
+ * fromPath: 引用源文件的绝对路径
+ * toPath: 引用目标文件的绝对路径
+ * @param options.simplifyIndex 是否简化以 /index 结尾的路径（默认：true）
+ * @param options.removeExtensions 要移除的扩展名列表，true 使用默认列表，false 不移除（默认：DEFAULT_EXTENSIONS_TO_REMOVE）
+ * @returns POSIX 格式的相对路径（以 ./ 或 ../ 开头）
  */
 export function calculateRelativePath(
 	fromPath: string,
@@ -35,14 +35,14 @@ export function calculateRelativePath(
 	const fromDir = path.dirname(fromPath);
 	const relative = path.relative(fromDir, toPath);
 
-	// POSIX 形式に変換し、./ で始まるように調整
+	// 转换为 POSIX 形式，并调整为以 ./ 开头
 	let formatted = relative.replace(/\\/g, "/");
 	if (!formatted.startsWith(".") && !formatted.startsWith("/")) {
 		formatted = `./${formatted}`;
 	}
 
-	// index 簡略化処理
-	// simplifyIndex: true かつ removeExtensions: false ではない場合に実行
+	// index 简化处理
+	// 当 simplifyIndex 为 true 且 removeExtensions !== false 时执行
 	if (mergedOptions.simplifyIndex && mergedOptions.removeExtensions !== false) {
 		const indexMatch = formatted.match(
 			/^(\.\.?(\/\.\.)*)\/index(\.(ts|tsx|js|jsx|json))?$/,
@@ -54,7 +54,7 @@ export function calculateRelativePath(
 
 	const originalExt = path.extname(formatted);
 
-	// Remove extension if specified
+	// 如指定则移除扩展名
 	if (mergedOptions.removeExtensions) {
 		const extensionsToRemove =
 			mergedOptions.removeExtensions === true

@@ -2,13 +2,13 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 
-// --- 設定 ---
-// ログファイルの出力先 (適宜変更してください)
+// --- 设置 ---
+// 日志文件输出位置（请按需修改）
 const LOG_FILE_PATH = path.resolve(__dirname, "../.logs/mcp_launcher.log");
-// 実際に実行するコマンドと引数
+// 实际执行的命令与参数
 const ACTUAL_COMMAND = "npx";
 const ACTUAL_ARGS = ["-y", "@sirosuzume/mcp-tsmorph-refactor"];
-// --- 設定ここまで ---
+// --- 设置到此结束 ---
 
 function ensureLogDirectoryExists(filePath) {
 	const dirname = path.dirname(filePath);
@@ -24,7 +24,7 @@ function logToFile(message) {
 		const timestamp = new Date().toISOString();
 		fs.appendFileSync(LOG_FILE_PATH, `[${timestamp}] ${message}\n`);
 	} catch (error) {
-		// ログファイルへの書き込み失敗はコンソールに出力 (ただしMCPクライアントからは見えない可能性)
+// 写入日志文件失败时输出到控制台（但 MCP 客户端可能不可见）
 		console.error("Failed to write to launcher log file:", error);
 	}
 }
@@ -34,30 +34,30 @@ logToFile(`CWD: ${process.cwd()}`);
 logToFile(`Executing: ${ACTUAL_COMMAND} ${ACTUAL_ARGS.join(" ")}`);
 
 const child = spawn(ACTUAL_COMMAND, ACTUAL_ARGS, {
-	stdio: ["pipe", "pipe", "pipe"], // stdin, stdout, stderr をパイプ
-	shell: process.platform === "win32", // Windowsではshell: trueが安定することがある
+	stdio: ["pipe", "pipe", "pipe"], // 通过管道连接 stdin、stdout、stderr
+	shell: process.platform === "win32", // 在 Windows 上有时 shell: true 更稳定
 });
 
 logToFile(`Spawned child process with PID: ${child.pid}`);
 
-// 子プロセスの標準出力をラッパーの標準出力とログファイルに流す
+// 将子进程的标准输出同时写入包装器的标准输出和日志文件
 child.stdout.on("data", (data) => {
-	process.stdout.write(data); // MCPクライアントへの出力
+	process.stdout.write(data); // 输出到 MCP 客户端
 	logToFile(`[CHILD STDOUT] ${data.toString().trim()}`);
 });
 
-// 子プロセスの標準エラー出力をラッパーの標準エラー出力とログファイルに流す
+// 将子进程的标准错误输出同时写入包装器的标准错误输出和日志文件
 child.stderr.on("data", (data) => {
-	process.stderr.write(data); // MCPクライアントへの出力 (エラーとして)
+	process.stderr.write(data); // 输出到 MCP 客户端（作为错误）
 	logToFile(`[CHILD STDERR] ${data.toString().trim()}`);
 });
 
-// 親プロセスの標準入力を子プロセスに流す
+// 将父进程的标准输入传给子进程
 process.stdin.pipe(child.stdin);
 
 child.on("error", (error) => {
 	logToFile(`Failed to start child process: ${error.message}`);
-	process.exit(1); // エラーで終了
+	process.exit(1); // 发生错误时退出
 });
 
 child.on("close", (code, signal) => {

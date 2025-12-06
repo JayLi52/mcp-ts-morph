@@ -7,7 +7,7 @@ import { registerRemovePathAliasTool } from "./register-remove-path-alias-tool";
 import { registerMoveSymbolToFileTool } from "./register-move-symbol-to-file-tool";
 
 /**
- * ts-morph を利用したリファクタリングツール群を MCP サーバーに登録する
+ * 将使用 ts-morph 的重构工具组注册到 MCP 服务器
  */
 export function registerTsMorphTools(server: McpServer): void {
 	registerRenameSymbolTool(server);

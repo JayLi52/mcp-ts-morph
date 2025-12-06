@@ -5,7 +5,7 @@ export class TimeoutError extends Error {
 	) {
 		super(message);
 		this.name = "TimeoutError";
-		// Set the prototype explicitly.
+		// 显式设置原型。
 		Object.setPrototypeOf(this, TimeoutError.prototype);
 	}
 }

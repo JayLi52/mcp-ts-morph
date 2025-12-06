@@ -22,17 +22,17 @@ const envSchema = z.object({
 type EnvConfig = z.infer<typeof envSchema>;
 
 /**
- * 環境変数を Zod スキーマでパースし、検証済みの設定オブジェクトを返します。
- * パースに失敗した場合は、エラーメッセージをコンソールに出力し、
- * デフォルト値を持つ設定オブジェクトを返します。
+ * 使用 Zod 模式解析环境变量并返回已验证的配置对象。
+ * 解析失败时会在控制台输出错误信息，
+ * 并返回带有默认值的配置对象。
  *
- * @returns {EnvConfig} 検証済みまたはデフォルトの環境変数設定。
+ * @returns {EnvConfig} 已验证或默认的环境变量配置。
  */
 export function parseEnvVariables(): EnvConfig {
 	const parseResult = envSchema.safeParse(process.env);
 
 	if (!parseResult.success) {
-		// テスト環境以外でのみエラーを出力
+		// 仅在非测试环境输出错误
 		if (process.env.NODE_ENV !== "test") {
 			console.error(
 				"❌ 不正な環境変数:",
@@ -56,12 +56,12 @@ export function parseEnvVariables(): EnvConfig {
 }
 
 /**
- * ファイルログ出力用の Pino Transport 設定オブジェクトを生成します。
- * ログディレクトリが存在しない場合は作成を試みます。
- * ディレクトリの準備に失敗した場合は undefined を返します。
+ * 生成用于文件日志输出的 Pino Transport 配置对象。
+ * 若日志目录不存在则尝试创建。
+ * 若目录准备失败则返回 undefined。
  *
- * @param {string} logFilePath - ログファイルの絶対パス。
- * @returns {pino.TransportSingleOptions | undefined} ファイル Transport 設定、または失敗時に undefined。
+ * @param {string} logFilePath - 日志文件的绝对路径。
+ * @returns {pino.TransportSingleOptions | undefined} 文件 Transport 配置，或失败时为 undefined。
  */
 function setupLogFileTransport(
 	logFilePath: string,
@@ -96,13 +96,12 @@ function setupLogFileTransport(
 }
 
 /**
- * コンソールログ出力用の Pino Transport 設定オブジェクトを生成します。
- * 本番環境以外では pino-pretty の使用を試みます。
- * pino-pretty が利用できない場合や本番環境では、Transport 設定なし (undefined) を返します
- * (Pino のデフォルトである標準出力への JSON 出力が使用されます)。
+ * 生成用于控制台日志输出的 Pino Transport 配置对象。
+ * 在非生产环境下尝试使用 pino-pretty。
+ * 若无法使用或在生产环境，则返回 undefined（使用 Pino 默认的标准输出 JSON）。
  *
- * @param {string} nodeEnv - 現在の NODE_ENV (`development`, `production`, `test`)。
- * @returns {pino.TransportSingleOptions | undefined} コンソール Transport 設定 (pino-pretty用)、または設定不要時に undefined。
+ * @param {string} nodeEnv - 当前的 NODE_ENV（`development`, `production`, `test`）。
+ * @returns {pino.TransportSingleOptions | undefined} 控制台 Transport 配置（用于 pino-pretty），或无需配置时为 undefined。
  */
 function setupConsoleTransport(
 	nodeEnv: string,
@@ -113,7 +112,7 @@ function setupConsoleTransport(
 
 	try {
 		require.resolve("pino-pretty");
-		// テスト環境では不要なため、development環境でのみログ出力
+		// 由于测试环境不需要，仅在开发环境输出日志
 		if (nodeEnv === "development") {
 			console.log("コンソールロギングに pino-pretty を使用します。");
 		}
@@ -122,7 +121,7 @@ function setupConsoleTransport(
 			options: { colorize: true, ignore: "pid,hostname" },
 		};
 	} catch (e) {
-		// テスト環境では不要なため、development環境でのみログ出力
+		// 由于测试环境不需要，仅在开发环境输出日志
 		if (nodeEnv === "development") {
 			console.log(
 				"pino-pretty が見つかりません。デフォルトの JSON コンソールロギングを使用します。",
@@ -133,13 +132,13 @@ function setupConsoleTransport(
 }
 
 /**
- * NODE_ENV とログ出力先に基づいて適切な Pino Transport 設定を構成します。
- * テスト環境では Transport を設定せず、ログは標準出力に向けられます。
+ * 根据 NODE_ENV 和日志输出位置配置合适的 Pino Transport。
+ * 在测试环境不设置 Transport，日志将写入标准输出。
  *
- * @param {string} nodeEnv - 現在の NODE_ENV。
- * @param {"console" | "file"} logOutput - ログの出力先。
- * @param {string} logFilePath - ファイル出力時のログファイルパス。
- * @returns {pino.TransportSingleOptions | undefined} 構成された Transport 設定、または Transport 不要時に undefined。
+ * @param {string} nodeEnv - 当前的 NODE_ENV。
+ * @param {"console" | "file"} logOutput - 日志的输出位置。
+ * @param {string} logFilePath - 文件输出时的日志文件路径。
+ * @returns {pino.TransportSingleOptions | undefined} 已配置的 Transport，或不需要时为 undefined。
  */
 export function configureTransport(
 	nodeEnv: string,
@@ -154,11 +153,11 @@ export function configureTransport(
 }
 
 /**
- * プロセスの終了イベントや例外発生時にログをフラッシュし、プロセスを終了させるハンドラー。
+ * 在进程结束事件或发生异常时刷新日志并结束进程的处理器。
  *
- * @param {pino.Logger} logger - 使用する Pino ロガーインスタンス。
- * @param {string} evt - 発生したイベント名 (例: 'SIGINT', 'uncaughtException')。
- * @param {Error | number | null} [err] - 関連するエラーオブジェクトまたは終了コード。
+ * @param {pino.Logger} logger - 使用的 Pino 日志实例。
+ * @param {string} evt - 发生的事件名（例如：'SIGINT'、'uncaughtException'）。
+ * @param {Error | number | null} [err] - 相关的错误对象或退出码。
  */
 function exitHandler(
 	logger: pino.Logger,
@@ -198,11 +197,11 @@ function exitHandler(
 }
 
 /**
- * SIGINT, SIGTERM, uncaughtException, unhandledRejection イベントを捕捉し、
- * exitHandler を呼び出すリスナーをプロセスに設定します。
- * また、通常の exit イベントリスナーも設定します。
+ * 捕获 SIGINT、SIGTERM、uncaughtException、unhandledRejection 事件，
+ * 并在进程上设置调用 exitHandler 的监听器。
+ * 同时也设置普通的 exit 事件监听器。
  *
- * @param {pino.Logger} logger - exitHandler に渡す Pino ロガーインスタンス。
+ * @param {pino.Logger} logger - 传递给 exitHandler 的 Pino 日志实例。
  */
 export function setupExitHandlers(logger: pino.Logger) {
 	process.once("SIGINT", () => exitHandler(logger, "SIGINT"));
@@ -218,7 +217,7 @@ export function setupExitHandlers(logger: pino.Logger) {
 		),
 	);
 
-	// 通常のexitハンドラはテスト環境でも動作させる（テストランナーによっては必要）
+	// 普通的 exit 处理器在测试环境也运行（某些测试运行器需要）
 	process.on("exit", (code) => {
 		const isTestEnv = process.env.NODE_ENV === "test";
 		if (!isTestEnv) {
@@ -226,11 +225,11 @@ export function setupExitHandlers(logger: pino.Logger) {
 				`プロセス終了 コード: ${code}。ログはフラッシュされているはずです。`,
 			);
 		}
-		// テストによっては終了コードのアサーションを行うため、ログフラッシュのみ試行
+		// 由于某些测试会断言退出码，仅尝试刷新日志
 		try {
 			logger.flush();
 		} catch (e) {
-			/* ignore flush error on exit */
+			/* 退出时忽略刷新错误 */
 		}
 	});
 }

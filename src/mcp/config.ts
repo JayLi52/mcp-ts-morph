@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerTsMorphTools } from "./tools/ts-morph-tools";
 
-/** MCPサーバーを作成する */
+/** 创建 MCP 服务器 */
 export function createMcpServer(): McpServer {
 	const server = new McpServer({
 		name: "mcp-ts-morph",

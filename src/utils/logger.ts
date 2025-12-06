@@ -28,7 +28,7 @@ const baseLogger = transport
 
 setupExitHandlers(baseLogger);
 
-// テスト環境では初期化ログを出力しない
+// 在测试环境中不输出初始化日志
 if (!isTestEnv) {
 	baseLogger.info(
 		{

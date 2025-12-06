@@ -1,5 +1,5 @@
 import { valueA, funcA, type InterfaceA } from "./moduleA";
-import { utilFunc1, internalUtil } from "@/utils"; // Use path alias
+import { utilFunc1, internalUtil } from "@/utils"; // 使用路径别名
 
 export const valueB = `Value from Module B using ${valueA}`;
 

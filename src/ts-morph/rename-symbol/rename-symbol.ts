@@ -1,15 +1,15 @@
 import { type Project, SyntaxKind, type Identifier, type Node } from "ts-morph";
-// 共通関数をインポート
+// 导入通用函数
 import {
 	initializeProject,
 	getChangedFiles,
 	saveProjectChanges,
 } from "../_utils/ts-morph-project";
 
-// --- Helper Functions ---
+// --- 辅助函数 ---
 
 /**
- * 指定されたファイルと位置から Identifier ノードを検索する
+ * 从指定文件与位置查找 Identifier 节点
  */
 export function findIdentifierNode(
 	project: Project,
@@ -56,7 +56,7 @@ export function findIdentifierNode(
 }
 
 /**
- * Identifier ノードが期待されるシンボル名と種類（親ノードの種類）であるか検証する
+ * 验证 Identifier 节点是否为期望的符号名与类型（父节点类型）
  */
 export function validateSymbol(
 	identifier: Identifier,
@@ -71,17 +71,17 @@ export function validateSymbol(
 }
 
 /**
- * 指定された Identifier ノードの参照箇所をすべて取得する
- * (定義箇所を含む場合があることに注意)
- * @param identifier 参照を検索する対象の Identifier ノード
- * @returns 参照箇所の Node 配列
+ * 获取指定 Identifier 节点的所有引用位置
+ *（注意可能包含定义位置）
+ * @param identifier 要搜索引用的 Identifier 节点
+ * @returns 引用位置的 Node 数组
  */
 export function findAllReferencesAsNodes(identifier: Identifier): Node[] {
 	return identifier.findReferencesAsNodes();
 }
 
 /**
- * 指定されたシンボルをプロジェクト全体でリネームする
+ * 在整个项目中重命名指定符号
  */
 export async function renameSymbol({
 	tsconfigPath,

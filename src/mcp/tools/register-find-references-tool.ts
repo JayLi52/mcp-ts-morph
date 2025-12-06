@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { findSymbolReferences } from "../../ts-morph/find-references"; // 新しい関数と型をインポート
+import { findSymbolReferences } from "../../ts-morph/find-references"; // 导入新的函数与类型
 import { performance } from "node:perf_hooks";
 
 export function registerFindReferencesTool(server: McpServer): void {
