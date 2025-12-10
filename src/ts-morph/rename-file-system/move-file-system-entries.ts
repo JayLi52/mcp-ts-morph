@@ -18,9 +18,9 @@ export function moveFileSystemEntries(
         logger.trace({ from: oldPath, to: newPath }, "Moving file");
         try {
             const fromDir = path.dirname(oldPath);
-            const moveTarget = path.isAbsolute(newPath)
-                ? path.relative(fromDir, newPath)
-                : newPath;
+            const isWinAbs = /^\/?[A-Za-z]:[\\/]/.test(newPath);
+            const isAbs = path.isAbsolute(newPath) || isWinAbs;
+            const moveTarget = isAbs ? path.relative(fromDir, newPath) : newPath;
             sourceFile.move(moveTarget);
         } catch (err) {
             logger.error(

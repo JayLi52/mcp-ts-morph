@@ -21,27 +21,42 @@ export function getChangedFiles(project: Project): SourceFile[] {
 export async function saveProjectChanges(
     project: Project,
     signal?: AbortSignal,
+    renames?: Array<{ oldPath: string; newPath: string }>,
 ): Promise<void> {
     signal?.throwIfAborted();
     try {
         const changed = project.getSourceFiles().filter((sf) => !sf.isSaved());
-        const hasWindowsAbsoluteOutsideCwd = changed.some((sf) => {
-            let p = sf.getFilePath();
-            p = p.replace(/^[/\\]+(?=[a-zA-Z]:)/, "");
-            const normalizedP = path.normalize(p);
-            const cwdNorm = path.normalize(process.cwd());
-            return /^[a-zA-Z]:[\\/]/.test(p) && !normalizedP.toLowerCase().startsWith(cwdNorm.toLowerCase());
-        });
+        const isWindowsAbsolute = (p: string) => {
+            const cleaned = p.replace(/^[/\\]+(?=[a-zA-Z]:)/, "");
+            return /^[a-zA-Z]:[\\/]/.test(cleaned);
+        };
+        const hasWindowsAbsolute = changed.some((sf) => isWindowsAbsolute(sf.getFilePath()));
 
-        if (hasWindowsAbsoluteOutsideCwd) {
+        if (hasWindowsAbsolute) {
+            const normalized = (p: string) => path.normalize(p.replace(/^[/\\]+(?=[a-zA-Z]:)/, ""));
+            const written = new Set<string>();
             for (const sf of changed) {
-                let filePath = sf.getFilePath();
-                filePath = filePath.replace(/^[/\\]+(?=[a-zA-Z]:)/, "");
-                const normalizedFilePath = path.normalize(filePath);
+                const targetPath = normalized(sf.getFilePath());
                 const content = sf.getFullText();
-                const dir = path.dirname(normalizedFilePath);
+                const dir = path.dirname(targetPath);
                 fs.mkdirSync(dir, { recursive: true });
-                fs.writeFileSync(normalizedFilePath, content, "utf-8");
+                fs.writeFileSync(targetPath, content, "utf-8");
+                written.add(targetPath.toLowerCase());
+            }
+            if (renames && renames.length > 0) {
+                for (const { oldPath, newPath } of renames) {
+                    const oldNorm = normalized(oldPath);
+                    const newNorm = normalized(newPath);
+                    if (oldNorm.toLowerCase() !== newNorm.toLowerCase()) {
+                        try {
+                            if (fs.existsSync(oldNorm)) {
+                                fs.rmSync(oldNorm, { force: true });
+                            }
+                        } catch (e) {
+                            logger.warn({ err: e, oldPath: oldNorm }, "删除旧文件失败");
+                        }
+                    }
+                }
             }
             return;
         }

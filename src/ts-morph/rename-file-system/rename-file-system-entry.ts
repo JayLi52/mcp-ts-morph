@@ -173,9 +173,13 @@ export async function renameFileSystemEntry({
             changedFilePaths = changedFilePaths.map((p) => path.normalize(p));
         }
 
-		if (!dryRun && changed.length > 0) {
-			signal?.throwIfAborted();
-			await saveProjectChanges(project, signal);
+        if (!dryRun && changed.length > 0) {
+            signal?.throwIfAborted();
+            await saveProjectChanges(
+                project,
+                signal,
+                renameOperations.map((op) => ({ oldPath: op.oldPath, newPath: op.newPath })),
+            );
 			logger.debug(
 				{
 					count: changed.length,
