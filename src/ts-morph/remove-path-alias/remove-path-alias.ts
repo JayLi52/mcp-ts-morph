@@ -1,9 +1,10 @@
 import type {
-	Project,
-	SourceFile,
-	ImportDeclaration,
-	ExportDeclaration,
+    Project,
+    SourceFile,
+    ImportDeclaration,
+    ExportDeclaration,
 } from "ts-morph";
+import * as path from "node:path";
 import { calculateRelativePath } from "../_utils/calculate-relative-path";
 
 /**
@@ -92,8 +93,8 @@ export async function removePathAlias({
 	baseUrl: string;
 	paths: Record<string, string[]>;
 }): Promise<{ changedFiles: string[] }> {
-	let filesToProcess: SourceFile[] = [];
-	const directory = project.getDirectory(targetPath);
+    let filesToProcess: SourceFile[] = [];
+    const directory = project.getDirectory(targetPath);
 
 	if (directory) {
 		filesToProcess = directory.getSourceFiles("**/*.{ts,tsx,js,jsx}");
@@ -107,15 +108,25 @@ export async function removePathAlias({
 		filesToProcess.push(sourceFile);
 	}
 
-	const changedFilePaths: string[] = [];
+    const changedFilePaths: string[] = [];
 
 	for (const sourceFile of filesToProcess) {
 		const modified = processSourceFile(sourceFile, baseUrl, paths, dryRun);
-		if (!modified) {
-			continue;
-		}
-		changedFilePaths.push(sourceFile.getFilePath());
-	}
+        if (!modified) {
+            continue;
+        }
+        changedFilePaths.push(sourceFile.getFilePath());
+    }
 
-	return { changedFiles: changedFilePaths };
+    const usesPosix = targetPath.startsWith("/");
+    const usesWindows = targetPath.includes("\\") || /^[a-zA-Z]:\\/.test(targetPath);
+    const formatted = directory
+        ? changedFilePaths.map((p) => path.normalize(p))
+        : usesPosix
+        ? changedFilePaths.map((p) => p.replace(/\\/g, "/"))
+        : usesWindows
+        ? changedFilePaths.map((p) => path.normalize(p))
+        : changedFilePaths;
+
+    return { changedFiles: formatted };
 }

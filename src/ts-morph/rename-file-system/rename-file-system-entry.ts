@@ -165,8 +165,13 @@ export async function renameFileSystemEntry({
 		updateModuleSpecifiers(allDeclarationsToUpdate, renameOperations, signal);
 
 		const saveStart = performance.now();
-		const changed = getChangedFiles(project);
-		changedFilePaths = changed.map((f) => f.getFilePath());
+        const changed = getChangedFiles(project);
+        changedFilePaths = changed.map((f) => f.getFilePath());
+        // 当项目为内存文件系统（路径以 '/' 开头）时，保持 POSIX 形式；否则归一化为本地分隔符
+        const usesPosix = changedFilePaths.some((p) => p.startsWith("/"));
+        if (!usesPosix) {
+            changedFilePaths = changedFilePaths.map((p) => path.normalize(p));
+        }
 
 		if (!dryRun && changed.length > 0) {
 			signal?.throwIfAborted();

@@ -53,7 +53,7 @@ describe("findIdentifierNode", () => {
 		const { project } = setupProject();
 		expect(() =>
 			findIdentifierNode(project, "/nonexistent.ts", { line: 1, column: 1 }),
-		).toThrowError(new Error("ファイルが見つかりません: /nonexistent.ts"));
+        ).toThrowError(new Error("未找到文件: /nonexistent.ts"));
 	});
 
     it("当指定位置未找到节点（越界）时抛出错误", () => {
@@ -62,7 +62,7 @@ describe("findIdentifierNode", () => {
 		project.createSourceFile(TEST_FILE_PATH, fileContent);
 		expect(() =>
 			findIdentifierNode(project, TEST_FILE_PATH, { line: 5, column: 1 }),
-		).toThrowError(new Error("指定位置 (5:1) はファイルの範囲外か無効です"));
+        ).toThrowError(new Error("指定位置 (5:1) 超出文件范围或无效"));
 	});
 
     it("当指定位置的节点不是标识符（例如关键字）时抛出错误", () => {
@@ -71,7 +71,7 @@ describe("findIdentifierNode", () => {
 		project.createSourceFile(TEST_FILE_PATH, fileContent);
 		expect(() =>
 			findIdentifierNode(project, TEST_FILE_PATH, { line: 1, column: 3 }),
-		).toThrowError(new Error("指定位置 (1:3) は Identifier ではありません"));
+        ).toThrowError(new Error("指定位置 (1:3) 不是 Identifier"));
 	});
 });
 
@@ -90,8 +90,8 @@ describe("validateSymbol", () => {
 			line: 1,
 			column: 10,
 		});
-		expect(() => validateSymbol(identifier, "wrongName")).toThrowError(
-			new Error("シンボル名が一致しません (期待: wrongName, 実際: myFunc)"),
-		);
+        expect(() => validateSymbol(identifier, "wrongName")).toThrowError(
+            new Error("符号名不匹配（期望: wrongName, 实际: myFunc）"),
+        );
 	});
 });

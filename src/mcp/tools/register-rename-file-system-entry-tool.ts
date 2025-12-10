@@ -152,15 +152,15 @@ export function registerRenameFileSystemEntryTool(server: McpServer): void {
 					"执行 rename_filesystem_entry_by_tsmorph 时出错",
 				);
 
-				if (error instanceof TimeoutError) {
-					message = `操作未在 ${error.durationSeconds} 秒内完成，已超时并取消。\n项目规模较大或修改点过多。`;
-				} else if (error instanceof Error && error.name === "AbortError") {
-					message = `操作已取消: ${error.message}`;
-				} else {
-					const errorMessage =
-						error instanceof Error ? error.message : String(error);
-					message = `重命名过程中出错: ${errorMessage}`;
-				}
+                if (error instanceof TimeoutError) {
+                    message = `Error: 操作未在 ${error.durationSeconds} 秒内完成，已超时并取消。\n项目规模较大或修改点过多。`;
+                } else if (error instanceof Error && error.name === "AbortError") {
+                    message = `Error: 操作已取消: ${error.message}`;
+                } else {
+                    const errorMessage =
+                        error instanceof Error ? error.message : String(error);
+                    message = `Error: 重命名过程中出错: ${errorMessage}`;
+                }
 				isError = true;
 			} finally {
 				if (timeoutId) {

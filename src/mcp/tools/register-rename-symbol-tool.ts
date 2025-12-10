@@ -89,15 +89,15 @@ export function registerRenameSymbolTool(server: McpServer): void {
 				} else {
 					message = `重命名成功：已将符号 '${symbolName}' 重命名为 '${newName}'。已修改以下文件:\n - ${changedFilesList}`;
 				}
-			} catch (error) {
-				const errorMessage =
-					error instanceof Error ? error.message : String(error);
-				message = `重命名过程中出错: ${errorMessage}`;
-				isError = true;
-			} finally {
-				const endTime = performance.now();
-				duration = ((endTime - startTime) / 1000).toFixed(2);
-			}
+            } catch (error) {
+                const errorMessage =
+                    error instanceof Error ? error.message : String(error);
+                message = `Error: 重命名过程中出错: ${errorMessage}`;
+                isError = true;
+            } finally {
+                const endTime = performance.now();
+                duration = ((endTime - startTime) / 1000).toFixed(2);
+            }
 
 			const finalMessage = `${message}\n状态: ${
 				isError ? "失败" : "成功"

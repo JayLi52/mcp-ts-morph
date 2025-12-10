@@ -37,9 +37,9 @@ describe("renameFileSystemEntry Error Cases", () => {
 				renames: [{ oldPath, newPath }],
 				dryRun: false,
 			}),
-		).rejects.toThrowError(
-			/^Rename process failed: リネーム対象が見つかりません.*See logs for details.$/,
-		);
+        ).rejects.toThrowError(
+            /^重命名失败：未找到重命名目标: .*请查看日志获取详情。$/,
+        );
 	});
 
 	it("存在しないディレクトリをリネームしようとするとエラーをスローする", async () => {
@@ -53,9 +53,9 @@ describe("renameFileSystemEntry Error Cases", () => {
 				renames: [{ oldPath, newPath }],
 				dryRun: false,
 			}),
-		).rejects.toThrowError(
-			/^Rename process failed: リネーム対象が見つかりません.*See logs for details.$/,
-		);
+        ).rejects.toThrowError(
+            /^重命名失败：未找到重命名目标: .*请查看日志获取详情。$/,
+        );
 	});
 
 	it("リネーム先のパスに既にファイルが存在する場合、エラーをスローする (上書きしない)", async () => {
@@ -71,9 +71,9 @@ describe("renameFileSystemEntry Error Cases", () => {
 				renames: [{ oldPath, newPath: existingPath }],
 				dryRun: false,
 			}),
-		).rejects.toThrowError(
-			/^Rename process failed: リネーム先パスに既にファイルが存在します.*See logs for details.$/,
-		);
+        ).rejects.toThrowError(
+            /^重命名失败：重命名目标路径已存在文件: .*请查看日志获取详情。$/,
+        );
 		expect(project.getSourceFile(oldPath)).toBeDefined();
 		expect(project.getSourceFile(existingPath)?.getFullText()).toContain(
 			"existing = true",
@@ -92,9 +92,9 @@ describe("renameFileSystemEntry Error Cases", () => {
 				renames: [{ oldPath, newPath: existingDirPath }],
 				dryRun: false,
 			}),
-		).rejects.toThrowError(
-			/^Rename process failed: リネーム先パスに既にディレクトリが存在します.*See logs for details.$/,
-		);
+        ).rejects.toThrowError(
+            /^重命名失败：重命名目标路径已存在目录: .*请查看日志获取详情。$/,
+        );
 		expect(project.getSourceFile(oldPath)).toBeDefined();
 		expect(project.getDirectory(existingDirPath)).toBeDefined();
 	});
@@ -116,8 +116,8 @@ describe("renameFileSystemEntry Error Cases", () => {
 				],
 				dryRun: false,
 			}),
-		).rejects.toThrowError(
-			/^Rename process failed: リネーム先のパスが重複しています.*See logs for details.$/,
-		);
+        ).rejects.toThrowError(
+            /^重命名失败：重命名目标路径重复: .*请查看日志获取详情。$/,
+        );
 	});
 });

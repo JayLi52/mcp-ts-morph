@@ -182,8 +182,8 @@ console.log(valA2);
 			"import { valA2 } from './renamedA2';",
 		);
 
-		expect(project.getSourceFile(fileA2Path)).toBeUndefined();
-		expect(project.getSourceFile(newFileA2Path)).toBeDefined();
+        expect(project.getSourceFile(fileA2Path)).toBeUndefined();
+        expect(project.getSourceFile(newFileA2Path.replace(/\\/g, "/"))).toBeDefined();
 	});
 
 	it("親階層(..)への相対パスimport文を持つファイルを、別のディレクトリに移動（リネーム）した際に、参照元のパスが正しく更新される", async () => {
@@ -218,7 +218,7 @@ console.log(valA1);
 			"import { valA1 } from '../dirC/movedA1';",
 		);
 
-		expect(project.getSourceFile(fileA1Path)).toBeUndefined();
-		expect(project.getSourceFile(newFileA1Path)).toBeDefined();
+        expect(project.getSourceFile(fileA1Path)).toBeUndefined();
+        expect(project.getSourceFile(newFileA1Path.replace(/\\/g, "/"))).toBeDefined();
 	});
 });

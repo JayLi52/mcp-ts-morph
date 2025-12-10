@@ -21,68 +21,90 @@ function checkDestinationExists(
 }
 
 export function prepareRenames(
-	project: Project,
-	renames: PathMapping[],
-	signal?: AbortSignal,
+    project: Project,
+    renames: PathMapping[],
+    signal?: AbortSignal,
 ): RenameOperation[] {
 	const startTime = performance.now();
 	signal?.throwIfAborted();
-	const renameOperations: RenameOperation[] = [];
+    const renameOperations: RenameOperation[] = [];
 	const uniqueNewPaths = new Set<string>();
 	logger.debug({ count: renames.length }, "开始准备重命名操作");
 
-	for (const rename of renames) {
-		signal?.throwIfAborted();
-		const logRename = { old: rename.oldPath, new: rename.newPath };
-		logger.trace({ rename: logRename }, "处理中重命名请求");
+    // 根据提供的旧路径风格判断（以 '/' 开始表示内存文件系统 POSIX 风格）
 
-		const absoluteOldPath = path.resolve(rename.oldPath);
-		const absoluteNewPath = path.resolve(rename.newPath);
+    for (const rename of renames) {
+        signal?.throwIfAborted();
+        const logRename = { old: rename.oldPath, new: rename.newPath };
+        logger.trace({ rename: logRename }, "处理中重命名请求");
 
-	if (uniqueNewPaths.has(absoluteNewPath)) {
-		throw new Error(`重命名目标路径重复: ${absoluteNewPath}`);
-	}
-		uniqueNewPaths.add(absoluteNewPath);
+        const isPosixProject = Boolean(project.getDirectory("/"));
+        let oldPathUsed: string;
+        let newPathUsed: string;
+        let isPosixStyle: boolean;
 
-		checkDestinationExists(project, absoluteNewPath, signal);
+        if (isPosixProject) {
+            oldPathUsed = rename.oldPath.replace(/\\/g, "/");
+            newPathUsed = rename.newPath.replace(/\\/g, "/");
+            isPosixStyle = true;
+        } else {
+            const candidateOld =
+                project.getSourceFile(rename.oldPath) || project.getDirectory(rename.oldPath)
+                    ? rename.oldPath
+                    : path.resolve(rename.oldPath);
+            isPosixStyle = candidateOld.startsWith("/");
+            oldPathUsed = candidateOld.replace(/\\/g, "/");
+            newPathUsed = (isPosixStyle ? rename.newPath : path.resolve(rename.newPath)).replace(/\\/g, "/");
+        }
 
-		signal?.throwIfAborted();
-		const sourceFile = project.getSourceFile(absoluteOldPath);
-		const directory = project.getDirectory(absoluteOldPath);
+        if (uniqueNewPaths.has(newPathUsed)) {
+            throw new Error(`重命名目标路径重复: ${newPathUsed}`);
+        }
+        uniqueNewPaths.add(newPathUsed);
 
-		if (sourceFile) {
-			logger.trace({ path: absoluteOldPath }, "识别为文件重命名");
-			renameOperations.push({
-				sourceFile,
-				oldPath: absoluteOldPath,
-				newPath: absoluteNewPath,
-			});
-		} else if (directory) {
-			logger.trace({ path: absoluteOldPath }, "识别为目录重命名");
-			signal?.throwIfAborted();
-			const filesInDir = directory.getDescendantSourceFiles();
-			logger.trace(
-				{ path: absoluteOldPath, count: filesInDir.length },
-				"已找到目录中需要重命名的文件",
-			);
-			for (const sf of filesInDir) {
-				const oldFilePath = sf.getFilePath();
-				const relative = path.relative(absoluteOldPath, oldFilePath);
-				const newFilePath = path.resolve(absoluteNewPath, relative);
-				logger.trace(
-					{ oldFile: oldFilePath, newFile: newFilePath },
-					"将目录文件加入重命名操作",
-				);
-				renameOperations.push({
-					sourceFile: sf,
-					oldPath: oldFilePath,
-					newPath: newFilePath,
-				});
-			}
-	} else {
-		throw new Error(`未找到重命名目标: ${absoluteOldPath}`);
-	}
-	}
+        checkDestinationExists(project, newPathUsed, signal);
+
+        signal?.throwIfAborted();
+        const sourceFile = project.getSourceFile(oldPathUsed);
+        const directory = project.getDirectory(oldPathUsed);
+
+        if (sourceFile) {
+            logger.trace({ path: oldPathUsed }, "识别为文件重命名");
+            renameOperations.push({
+                sourceFile,
+                oldPath: oldPathUsed,
+                newPath: newPathUsed,
+            });
+        } else if (directory) {
+            logger.trace({ path: oldPathUsed }, "识别为目录重命名");
+            signal?.throwIfAborted();
+            const filesInDir = directory.getDescendantSourceFiles();
+            logger.trace(
+                { path: oldPathUsed, count: filesInDir.length },
+                "已找到目录中需要重命名的文件",
+            );
+            for (const sf of filesInDir) {
+                const oldFilePath = sf.getFilePath();
+                const relative = isPosixStyle
+                    ? path.posix.relative(oldPathUsed, oldFilePath)
+                    : path.relative(path.normalize(oldPathUsed), path.normalize(oldFilePath));
+                const newFilePath = isPosixStyle
+                    ? path.posix.resolve(newPathUsed, relative)
+                    : path.resolve(newPathUsed, relative).replace(/\\/g, "/");
+                logger.trace(
+                    { oldFile: oldFilePath, newFile: newFilePath },
+                    "将目录文件加入重命名操作",
+                );
+                renameOperations.push({
+                    sourceFile: sf,
+                    oldPath: oldFilePath,
+                    newPath: newFilePath,
+                });
+            }
+        } else {
+            throw new Error(`未找到重命名目标: ${oldPathUsed}`);
+        }
+    }
 	const durationMs = (performance.now() - startTime).toFixed(2);
 	logger.debug(
 		{ operationCount: renameOperations.length, durationMs },

@@ -60,16 +60,16 @@ export function registerFindReferencesTool(server: McpServer): void {
 
 				let resultText = "";
 
-				if (definition) {
-					resultText += "定义：\n";
+                if (definition) {
+                    resultText += "Definition: 定义：\n";
 					resultText += `- ${definition.filePath}:${definition.line}:${definition.column}\n`;
 					resultText += `  \`\`\`typescript\n  ${definition.text}\n  \`\`\`\n\n`;
 				} else {
 					resultText += "未找到定义。\n\n";
 				}
 
-				if (references.length > 0) {
-					resultText += `引用（找到 ${references.length} 处）：\n`;
+                if (references.length > 0) {
+                    resultText += `References (${references.length} found): 引用（找到 ${references.length} 处）：\n`;
 					const formattedReferences = references
 						.map(
 							(ref) =>

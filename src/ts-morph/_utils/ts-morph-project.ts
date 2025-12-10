@@ -1,5 +1,6 @@
 import { Project, type SourceFile } from "ts-morph";
 import * as path from "node:path";
+import * as fs from "node:fs";
 import { NewLineKind } from "typescript";
 import logger from "../../utils/logger";
 
@@ -18,19 +19,41 @@ export function getChangedFiles(project: Project): SourceFile[] {
 }
 
 export async function saveProjectChanges(
-	project: Project,
-	signal?: AbortSignal,
+    project: Project,
+    signal?: AbortSignal,
 ): Promise<void> {
-	signal?.throwIfAborted();
-	try {
-		await project.save();
-	} catch (error) {
-		if (error instanceof Error && error.name === "AbortError") {
-			throw error;
-		}
-		const message = error instanceof Error ? error.message : String(error);
-		throw new Error(`保存文件时发生错误: ${message}`);
-	}
+    signal?.throwIfAborted();
+    try {
+        const changed = project.getSourceFiles().filter((sf) => !sf.isSaved());
+        const hasWindowsAbsoluteOutsideCwd = changed.some((sf) => {
+            let p = sf.getFilePath();
+            p = p.replace(/^[/\\]+(?=[a-zA-Z]:)/, "");
+            const normalizedP = path.normalize(p);
+            const cwdNorm = path.normalize(process.cwd());
+            return /^[a-zA-Z]:[\\/]/.test(p) && !normalizedP.toLowerCase().startsWith(cwdNorm.toLowerCase());
+        });
+
+        if (hasWindowsAbsoluteOutsideCwd) {
+            for (const sf of changed) {
+                let filePath = sf.getFilePath();
+                filePath = filePath.replace(/^[/\\]+(?=[a-zA-Z]:)/, "");
+                const normalizedFilePath = path.normalize(filePath);
+                const content = sf.getFullText();
+                const dir = path.dirname(normalizedFilePath);
+                fs.mkdirSync(dir, { recursive: true });
+                fs.writeFileSync(normalizedFilePath, content, "utf-8");
+            }
+            return;
+        }
+
+        await project.save();
+    } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+            throw error;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`保存文件时发生错误: ${message}`);
+    }
 }
 
 export function getTsConfigPaths(
