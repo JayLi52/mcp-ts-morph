@@ -1,7 +1,7 @@
 {
 	"name": "mcp-tsmorph-refactor",
 	"version": "0.3.0",
-	"description": "使用 ts-morph 的 MCP server 进行重构",
+	"description": "TypeScript项目, MCP server",
 	"main": "dist/index.js",
 	"bin": {
 		"mcp-tsmorph-refactor": "dist/index.js"
@@ -29,7 +29,7 @@
 		"lint:fix": "biome lint --write ./",
 		"format": "biome check --write ./"
 	},
-	"keywords": ["mcp", "ts-morph", "refactoring"],
+	"keywords": ["mcp", "ts-morph", "refactoring", "typescript"],
 	"author": "SiroSuzume",
 	"license": "MIT",
 	"volta": {
