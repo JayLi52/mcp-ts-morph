@@ -2,7 +2,7 @@ import { Project, SyntaxKind, type Identifier } from "ts-morph";
 import { describe, it, expect } from "vitest";
 import { findIdentifierNode, validateSymbol } from "./rename-symbol";
 
-// --- Test Setup ---
+// --- 测试环境搭建 ---
 
 const TEST_FILE_PATH = "/test.ts";
 
@@ -22,7 +22,7 @@ const setupProject = () => {
 };
 
 describe("findIdentifierNode", () => {
-	it("指定された位置の関数識別子を見つけられること", () => {
+    it("可以在指定位置找到函数标识符", () => {
 		const { getIdentifier } = setupProject();
 		const fileContent = "function myFunction() {}";
 		const identifier = getIdentifier(fileContent, { line: 1, column: 10 });
@@ -32,7 +32,7 @@ describe("findIdentifierNode", () => {
 		);
 	});
 
-	it("指定された位置の変数識別子を見つけられること", () => {
+    it("可以在指定位置找到变量标识符", () => {
 		const { getIdentifier } = setupProject();
 		const fileContent = "const myVariable = 1;";
 		const identifier = getIdentifier(fileContent, { line: 1, column: 7 });
@@ -42,21 +42,21 @@ describe("findIdentifierNode", () => {
 		);
 	});
 
-	it("指定位置が識別子のテキスト内であっても識別子を見つけられること", () => {
+    it("即使指定位置在标识符文本内部也能找到标识符", () => {
 		const { getIdentifier } = setupProject();
 		const fileContent = "function myFunction() {}";
 		const identifier = getIdentifier(fileContent, { line: 1, column: 12 });
 		expect(identifier.getText()).toBe("myFunction");
 	});
 
-	it("ファイルが存在しない場合にエラーをスローすること", () => {
+    it("当文件不存在时抛出错误", () => {
 		const { project } = setupProject();
 		expect(() =>
 			findIdentifierNode(project, "/nonexistent.ts", { line: 1, column: 1 }),
 		).toThrowError(new Error("ファイルが見つかりません: /nonexistent.ts"));
 	});
 
-	it("指定位置にノードが見つからない場合（範囲外）にエラーをスローすること", () => {
+    it("当指定位置未找到节点（越界）时抛出错误", () => {
 		const { project } = setupProject();
 		const fileContent = "const x = 1;";
 		project.createSourceFile(TEST_FILE_PATH, fileContent);
@@ -65,7 +65,7 @@ describe("findIdentifierNode", () => {
 		).toThrowError(new Error("指定位置 (5:1) はファイルの範囲外か無効です"));
 	});
 
-	it("指定位置のノードが識別子でない場合（例：キーワード）にエラーをスローすること", () => {
+    it("当指定位置的节点不是标识符（例如关键字）时抛出错误", () => {
 		const { project } = setupProject();
 		const fileContent = "function myFunction() {}";
 		project.createSourceFile(TEST_FILE_PATH, fileContent);
@@ -76,7 +76,7 @@ describe("findIdentifierNode", () => {
 });
 
 describe("validateSymbol", () => {
-	it("シンボル名が一致する場合、エラーは発生しないこと", () => {
+    it("当符号名一致时不应产生错误", () => {
 		const { getIdentifier } = setupProject();
 		const identifier = getIdentifier("function myFunc() {}", {
 			line: 1,
@@ -84,7 +84,7 @@ describe("validateSymbol", () => {
 		});
 		expect(() => validateSymbol(identifier, "myFunc")).not.toThrow();
 	});
-	it("シンボル名が一致しない場合にエラーをスローすること", () => {
+    it("当符号名不一致时抛出错误", () => {
 		const { getIdentifier } = setupProject();
 		const identifier = getIdentifier("function myFunc() {}", {
 			line: 1,

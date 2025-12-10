@@ -6,14 +6,14 @@ import * as os from "node:os";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 /**
- * テスト用の一時ディレクトリを作成
+ * 创建测试用的临时目录
  */
 function createTempDir(): string {
 	return fs.mkdtempSync(path.join(os.tmpdir(), "mcp-integration-test-"));
 }
 
 /**
- * ディレクトリを再帰的に削除
+ * 递归删除目录
  */
 function removeTempDir(dir: string): void {
 	if (fs.existsSync(dir)) {
@@ -22,7 +22,7 @@ function removeTempDir(dir: string): void {
 }
 
 /**
- * ツールの結果の型
+ * 工具返回结果的类型
  */
 interface ToolResult {
 	content: Array<{
@@ -33,12 +33,12 @@ interface ToolResult {
 }
 
 /**
- * ツールハンドラーの型
+ * 工具处理函数类型
  */
 type ToolHandler<T = unknown> = (args: T) => Promise<ToolResult>;
 
 /**
- * MCPサーバーのモック
+ * MCP 服务器的模拟
  */
 interface MockServer {
 	tool: <T>(
@@ -51,7 +51,7 @@ interface MockServer {
 }
 
 /**
- * MCPサーバーのモックを作成
+ * 创建 MCP 服务器的模拟
  */
 function createMockServer(): MockServer {
 	const tools = new Map<string, { handler: ToolHandler<unknown> }>();
@@ -87,7 +87,7 @@ describe("MCP Tools 統合テスト", () => {
 		srcDir = path.join(tempDir, "src");
 		fs.mkdirSync(srcDir, { recursive: true });
 
-		// tsconfig.json を作成
+    // 创建 tsconfig.json
 		fs.writeFileSync(
 			tsconfigPath,
 			JSON.stringify(
@@ -110,11 +110,11 @@ describe("MCP Tools 統合テスト", () => {
 			),
 		);
 
-		// モックサーバーを作成してツールを登録
-		mockServer = createMockServer();
-		// テスト用モックをMcpServerとしてキャスト
-		// 実装を変更せずテスト側で対応
-		registerTsMorphTools(mockServer as unknown as McpServer);
+        // 创建模拟服务器并注册工具
+        mockServer = createMockServer();
+        // 将测试用模拟对象强制转换为 McpServer
+        // 不修改实现，测试侧进行适配
+        registerTsMorphTools(mockServer as unknown as McpServer);
 	});
 
 	afterEach(() => {
@@ -146,11 +146,11 @@ console.log(VERSION);
 `,
 			);
 
-			// rename_symbol_by_tsmorph ツールを呼び出し
+            // 调用 rename_symbol_by_tsmorph 工具
 			await mockServer.callTool("rename_symbol_by_tsmorph", {
 				tsconfigPath,
 				targetFilePath: utilsPath,
-				position: { line: 1, column: 17 }, // "calculateSum" の位置
+                position: { line: 1, column: 17 }, // "calculateSum" 的位置
 				symbolName: "calculateSum",
 				newName: "addNumbers",
 				dryRun: false,
@@ -175,11 +175,11 @@ console.log(oldName);
 `,
 			);
 
-			// dryRunモードで実行
+            // 以 dryRun 模式运行
 			await mockServer.callTool("rename_symbol_by_tsmorph", {
 				tsconfigPath,
 				targetFilePath: filePath,
-				position: { line: 1, column: 7 }, // "oldName" の位置
+                position: { line: 1, column: 7 }, // "oldName" 的位置
 				symbolName: "oldName",
 				newName: "newName",
 				dryRun: true,
@@ -227,15 +227,15 @@ logger.log("Hello from app2");
 `,
 			);
 
-			// find_references_by_tsmorph ツールを呼び出し
+            // 调用 find_references_by_tsmorph 工具
 			const result = await mockServer.callTool("find_references_by_tsmorph", {
 				tsconfigPath,
 				targetFilePath: libPath,
-				position: { line: 1, column: 14 }, // "Logger" クラスの位置
+                position: { line: 1, column: 14 }, // "Logger" 类的位置
 			});
 
 			expect(result).toBeDefined();
-			// 結果の構造を確認（実際の実装に応じて調整）
+            // 检查结果结构（根据实际实现进行调整）
 			expect(result).toHaveProperty("content");
 			const content = result.content[0]?.text || "";
 			expect(content.toLowerCase()).toContain("reference");
@@ -265,14 +265,14 @@ console.log(multiply(3, 4));
 `,
 			);
 
-			// remove_path_alias_by_tsmorph ツールを呼び出し
+            // 调用 remove_path_alias_by_tsmorph 工具
 			await mockServer.callTool("remove_path_alias_by_tsmorph", {
 				tsconfigPath,
 				targetPath: appPath,
 				dryRun: false,
 			});
 
-			// パスエイリアスが相対パスに変換されていることを確認
+            // 确认路径别名已被转换为相对路径
 			const updatedContent = fs.readFileSync(appPath, "utf-8");
 			expect(updatedContent).toContain('from "./utils/math"');
 			expect(updatedContent).not.toContain('from "@/utils/math"');
@@ -295,18 +295,18 @@ console.log(data.value);
 `,
 			);
 
-			// rename_filesystem_entry_by_tsmorph ツールを呼び出し
+            // 调用 rename_filesystem_entry_by_tsmorph 工具
 			await mockServer.callTool("rename_filesystem_entry_by_tsmorph", {
 				tsconfigPath,
 				renames: [{ oldPath, newPath }],
 				dryRun: false,
 			});
 
-			// ファイルがリネームされていることを確認
+            // 确认文件已被重命名
 			expect(fs.existsSync(newPath)).toBe(true);
 			expect(fs.existsSync(oldPath)).toBe(false);
 
-			// インポートが更新されていることを確認
+            // 确认 import 已被更新
 			const updatedImporterContent = fs.readFileSync(importerPath, "utf-8");
 			expect(updatedImporterContent).toContain('from "./new-name"');
 		});
@@ -339,27 +339,27 @@ console.log(funcToStay());
 `,
 			);
 
-			// move_symbol_to_file_by_tsmorph ツールを呼び出し
+            // 调用 move_symbol_to_file_by_tsmorph 工具
 			await mockServer.callTool("move_symbol_to_file_by_tsmorph", {
 				tsconfigPath,
-				originalFilePath: sourcePath, // sourceFilePathではなくoriginalFilePath
+                originalFilePath: sourcePath, // 使用 originalFilePath 而非 sourceFilePath
 				targetFilePath: targetPath,
-				symbolToMove: "funcToMove", // symbolNameではなくsymbolToMove
+                symbolToMove: "funcToMove", // 使用 symbolToMove 而非 symbolName
 				declarationKindString: "FunctionDeclaration",
 				dryRun: false,
 			});
 
-			// ターゲットファイルが作成され、シンボルが移動していることを確認
+            // 确认目标文件已创建且符号已移动
 			expect(fs.existsSync(targetPath)).toBe(true);
 			const targetContent = fs.readFileSync(targetPath, "utf-8");
 			expect(targetContent).toContain("function funcToMove");
 
-			// ソースファイルからシンボルが削除されていることを確認
+            // 确认源文件中的符号已被移除
 			const sourceContent = fs.readFileSync(sourcePath, "utf-8");
 			expect(sourceContent).not.toContain("function funcToMove");
 			expect(sourceContent).toContain("function funcToStay");
 
-			// コンシューマーのインポートが更新されていることを確認
+            // 确认消费方的 import 已更新
 			const consumerContent = fs.readFileSync(consumerPath, "utf-8");
 			expect(consumerContent).toContain('from "./target"');
 			expect(consumerContent).toContain('from "./source"');
@@ -379,7 +379,7 @@ console.log(funcToStay());
 				dryRun: false,
 			});
 
-			// MCPツールはエラーを返すが、throwしない
+            // MCP 工具返回错误但不抛出异常
 			expect(result).toHaveProperty("isError", true);
 			expect(result.content[0]?.text).toContain("Error");
 		});
@@ -398,7 +398,7 @@ console.log(funcToStay());
 				dryRun: false,
 			});
 
-			// MCPツールはエラーを返すが、throwしない
+            // MCP 工具返回错误但不抛出异常
 			expect(result).toHaveProperty("isError", true);
 			expect(result.content[0]?.text).toContain("Error");
 		});

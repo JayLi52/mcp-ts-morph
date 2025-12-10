@@ -47,19 +47,19 @@ console.log(targetSymbol);`,
 
 	// Barrel file re-exporting from target
 	const barrelFilePath = "/src/index.ts";
-	project.createSourceFile(
-		barrelFilePath,
-		`export { targetSymbol } from './target'; // 値を再エクスポート
-export type { TargetType } from './target'; // 型を再エクスポート`,
-	);
+    project.createSourceFile(
+        barrelFilePath,
+        `export { targetSymbol } from './target'; // 重新导出值
+export type { TargetType } from './target'; // 重新导出类型`,
+    );
 
 	// File importing from barrel file
 	const importerBarrelPath = "/src/importer-barrel.ts";
-	project.createSourceFile(
-		importerBarrelPath,
-		`import { targetSymbol } from './index'; // バレルファイルからインポート
+    project.createSourceFile(
+        importerBarrelPath,
+        `import { targetSymbol } from './index'; // 从 barrel 文件导入
 console.log(targetSymbol);`,
-	);
+    );
 
 	// File with no reference
 	const noRefFilePath = "/src/no-ref.ts";
@@ -108,7 +108,7 @@ describe("findDeclarationsReferencingFile", () => {
 		);
 		expect(typeRelImport?.originalSpecifierText).toBe("./target");
 
-		// --- エイリアスパスインポートの検証 ---
+    // --- 校验使用路径别名的导入 ---
 		const aliasImports = results.filter(
 			(r) =>
 				r.referencingFilePath === importerAliasPath &&
@@ -152,7 +152,7 @@ describe("findDeclarationsReferencingFile", () => {
 		expect(aliasImport.resolvedPath).toBe(targetFilePath);
 		expect(aliasImport.originalSpecifierText).toBe("@/target");
 		expect(aliasImport.declaration.getKindName()).toBe("ImportDeclaration");
-		expect(aliasImport.wasPathAlias).toBe(true); // エイリアスが検出されるべき
+    expect(aliasImport.wasPathAlias).toBe(true); // 应检测到路径别名
 	});
 
 	it("バレルファイルで再エクスポートしている ExportDeclaration を見つける", async () => {
@@ -188,12 +188,12 @@ describe("findDeclarationsReferencingFile", () => {
 	});
 
 	// findDeclarationsReferencingFile は getReferencingSourceFiles を使うため、
-	// バレルファイルを経由した参照は見つけられない (これは想定される動作)
+    // 经由 barrel 文件的引用不会被找到（为预期行为）
 	it("バレルファイル経由のインポートは見つけられない (getReferencingSourceFiles の仕様)", async () => {
 		const { project, targetFile, importerBarrelPath } = setupTestProject();
 		const results = await findDeclarationsReferencingFile(targetFile);
 
-		// 結果に importerBarrelPath からのインポートが含まれないことを確認
+    // 确认结果不包含来自 importerBarrelPath 的导入
 		const barrelImport = results.find(
 			(r) => r.referencingFilePath === importerBarrelPath,
 		);
