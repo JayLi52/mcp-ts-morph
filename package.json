@@ -1,7 +1,7 @@
 {
-	"name": "@sirosuzume/mcp-tsmorph-refactor",
-	"version": "0.2.9",
-	"description": "ts-morph を利用した MCP リファクタリングサーバー",
+	"name": "mcp-tsmorph-refactor",
+	"version": "0.3.0",
+	"description": "使用 ts-morph 的 MCP server 进行重构",
 	"main": "dist/index.js",
 	"bin": {
 		"mcp-tsmorph-refactor": "dist/index.js"

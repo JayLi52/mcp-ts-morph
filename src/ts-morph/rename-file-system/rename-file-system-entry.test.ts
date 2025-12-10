@@ -6,14 +6,14 @@ import * as path from "node:path";
 import * as os from "node:os";
 
 /**
- * テスト用の一時ディレクトリを作成
+ * 创建用于测试的一次性临时目录
  */
 function createTempDir(): string {
 	return fs.mkdtempSync(path.join(os.tmpdir(), "rename-file-system-test-"));
 }
 
 /**
- * ディレクトリを再帰的に削除
+ * 递归删除目录
  */
 function removeTempDir(dir: string): void {
 	if (fs.existsSync(dir)) {
@@ -21,7 +21,7 @@ function removeTempDir(dir: string): void {
 	}
 }
 
-describe("renameFileSystemEntry 統合テスト", () => {
+describe("renameFileSystemEntry 集成测试", () => {
 	let tempDir: string;
 	let tsconfigPath: string;
 	let srcDir: string;
@@ -32,7 +32,7 @@ describe("renameFileSystemEntry 統合テスト", () => {
 		srcDir = path.join(tempDir, "src");
 		fs.mkdirSync(srcDir, { recursive: true });
 
-		// tsconfig.json を作成
+        // 创建 tsconfig.json
 		fs.writeFileSync(
 			tsconfigPath,
 			JSON.stringify(
@@ -60,8 +60,8 @@ describe("renameFileSystemEntry 統合テスト", () => {
 		removeTempDir(tempDir);
 	});
 
-	it("単一ファイルのリネームとインポート更新", async () => {
-		// テストファイルを作成
+	it("单文件重命名和导入更新", async () => {
+		// 测试文件创建
 		const oldUtilsPath = path.join(srcDir, "utils.ts");
 		const newUtilsPath = path.join(srcDir, "helpers.ts");
 		const mainPath = path.join(srcDir, "main.ts");
@@ -86,7 +86,7 @@ console.log("Version:", VERSION);
 `,
 		);
 
-		// プロジェクトを作成してリネーム実行
+		// 项目创建并执行重命名
 		const project = initializeProject(tsconfigPath);
 
 		const result = await renameFileSystemEntry({
@@ -100,22 +100,22 @@ console.log("Version:", VERSION);
 			dryRun: false,
 		});
 
-		// リネーム後のファイルが存在することを確認
+        // 确认重命名后的文件存在
 		expect(fs.existsSync(newUtilsPath)).toBe(true);
 		expect(fs.existsSync(oldUtilsPath)).toBe(false);
 
-		// インポート文が更新されていることを確認
+        // 确认 import 语句已更新
 		const updatedMainContent = fs.readFileSync(mainPath, "utf-8");
 		expect(updatedMainContent).toContain('from "./helpers"');
 		expect(updatedMainContent).not.toContain('from "./utils"');
 
-		// 変更されたファイルのリストを確認
+        // 确认更改的文件列表
 		expect(result.changedFiles).toContain(mainPath);
 		expect(result.changedFiles).toContain(newUtilsPath);
 	});
 
-	it("フォルダのリネームと複数ファイルの参照更新", async () => {
-		// フォルダ構造を作成
+    it("重命名文件夹并更新多个文件的引用", async () => {
+        // 创建文件夹结构
 		const oldFolderPath = path.join(srcDir, "components");
 		const newFolderPath = path.join(srcDir, "widgets");
 		fs.mkdirSync(oldFolderPath, { recursive: true });
@@ -176,34 +176,34 @@ console.log(modal.render());
 			dryRun: false,
 		});
 
-		// フォルダがリネームされていることを確認
+        // 确认文件夹已被重命名
 		expect(fs.existsSync(newFolderPath)).toBe(true);
-		// ts-morphはファイルを移動するが、空のフォルダは残ることがある
-		// 重要なのはファイルが正しく移動されていること
+        // ts-morph 会移动文件，但可能保留空目录
+        // 关键是文件已正确移动
 
-		// ファイルが新しいフォルダに移動していることを確認
+        // 确认文件已移动至新文件夹
 		expect(fs.existsSync(path.join(newFolderPath, "Button.ts"))).toBe(true);
 		expect(fs.existsSync(path.join(newFolderPath, "Modal.ts"))).toBe(true);
 
-		// 元のフォルダにファイルが残っていないことを確認
+        // 确认原文件夹中不再有文件
 		expect(fs.existsSync(path.join(oldFolderPath, "Button.ts"))).toBe(false);
 		expect(fs.existsSync(path.join(oldFolderPath, "Modal.ts"))).toBe(false);
 
-		// インポート文が更新されていることを確認
+        // 确认 import 语句已更新
 		const updatedAppContent = fs.readFileSync(appPath, "utf-8");
 		expect(updatedAppContent).toContain('from "./widgets/Button"');
 		expect(updatedAppContent).toContain('from "./widgets/Modal"');
 		expect(updatedAppContent).not.toContain('from "./components/');
 
-		// Modal.ts内の相対インポートも更新されていることを確認
+        // 确认 Modal.ts 内的相对导入也已更新
 		const updatedModalContent = fs.readFileSync(
 			path.join(newFolderPath, "Modal.ts"),
 			"utf-8",
 		);
-		expect(updatedModalContent).toContain('from "./Button"'); // 相対パスは変更なし
+        expect(updatedModalContent).toContain('from "./Button"'); // 相对路径未改变
 	});
 
-	it("dryRunモードでファイルシステムを変更しない", async () => {
+    it("在 dryRun 模式下不修改文件系统", async () => {
 		const oldPath = path.join(srcDir, "old-file.ts");
 		const newPath = path.join(srcDir, "new-file.ts");
 		const importerPath = path.join(srcDir, "importer.ts");
@@ -227,22 +227,22 @@ console.log(value);
 					newPath,
 				},
 			],
-			dryRun: true, // dryRunモードを有効化
+            dryRun: true, // 启用 dryRun 模式
 		});
 
-		// ファイルシステムが変更されていないことを確認
+        // 确认文件系统未被更改
 		expect(fs.existsSync(oldPath)).toBe(true);
 		expect(fs.existsSync(newPath)).toBe(false);
 
-		// 元のインポート文が変更されていないことを確認
+        // 确认原 import 语句未更改
 		const importerContent = fs.readFileSync(importerPath, "utf-8");
 		expect(importerContent).toContain('from "./old-file"');
 
-		// 変更予定のファイルリストは返される
+        // 返回计划更改的文件列表
 		expect(result.changedFiles.length).toBeGreaterThan(0);
 	});
 
-	it("パスエイリアスを使用したインポートの更新", async () => {
+	it("使用路径别名的导入更新", async () => {
 		const utilsDir = path.join(srcDir, "utils");
 		const helpersDir = path.join(srcDir, "helpers");
 		fs.mkdirSync(utilsDir, { recursive: true });
@@ -284,23 +284,23 @@ console.log(multiply(4, 5));
 			dryRun: false,
 		});
 
-		// フォルダがリネームされていることを確認
+        // 确认文件夹已被重命名
 		expect(fs.existsSync(helpersDir)).toBe(true);
-		// ts-morphはファイルを移動するが、空のフォルダは残ることがある
-		// 重要なのはファイルが正しく移動されていること
+        // ts-morph 会移动文件，但可能保留空目录
+        // 关键是文件已正确移动
 
-		// ファイルが新しいフォルダに移動していることを確認
+        // 确认文件已移动至新文件夹
 		expect(fs.existsSync(path.join(helpersDir, "math.ts"))).toBe(true);
 		expect(fs.existsSync(path.join(utilsDir, "math.ts"))).toBe(false);
 
-		// パスエイリアスを使用したインポートが更新されていることを確認
-		// ts-morphのリネーム処理ではパスエイリアスが相対パスに変換されることがある
+        // 确认使用路径别名的导入已更新
+        // ts-morph 的重命名处理可能将路径别名转换为相对路径
 		const updatedAppContent = fs.readFileSync(appPath, "utf-8");
 		expect(updatedAppContent).toContain('from "./helpers/math"');
 		expect(updatedAppContent).not.toContain('from "@/utils/math"');
 	});
 
-	it("複数ファイルの同時リネーム", async () => {
+it("同时重命名多个文件", async () => {
 		const file1OldPath = path.join(srcDir, "file1.ts");
 		const file1NewPath = path.join(srcDir, "renamed1.ts");
 		const file2OldPath = path.join(srcDir, "file2.ts");
@@ -331,13 +331,13 @@ console.log(value1, value2);
 			dryRun: false,
 		});
 
-		// 両方のファイルがリネームされていることを確認
+        // 确认两个文件都已被重命名
 		expect(fs.existsSync(file1NewPath)).toBe(true);
 		expect(fs.existsSync(file2NewPath)).toBe(true);
 		expect(fs.existsSync(file1OldPath)).toBe(false);
 		expect(fs.existsSync(file2OldPath)).toBe(false);
 
-		// インポート文が両方とも更新されていることを確認
+        // 确认两个文件的 import 语句都已更新
 		const updatedMainContent = fs.readFileSync(mainPath, "utf-8");
 		expect(updatedMainContent).toContain('from "./renamed1"');
 		expect(updatedMainContent).toContain('from "./renamed2"');
@@ -345,7 +345,7 @@ console.log(value1, value2);
 		expect(updatedMainContent).not.toContain('from "./file2"');
 	});
 
-	it("AbortSignalによる処理のキャンセル", async () => {
+it("使用 AbortSignal 取消处理", async () => {
 		const oldPath = path.join(srcDir, "cancelable.ts");
 		const newPath = path.join(srcDir, "renamed.ts");
 
@@ -354,7 +354,7 @@ console.log(value1, value2);
 		const project = initializeProject(tsconfigPath);
 		const abortController = new AbortController();
 
-		// 即座にキャンセル
+        // 立即取消
 		abortController.abort();
 
 		await expect(
@@ -366,7 +366,7 @@ console.log(value1, value2);
 			}),
 		).rejects.toThrow();
 
-		// ファイルが変更されていないことを確認
+        // 确认文件未被更改
 		expect(fs.existsSync(oldPath)).toBe(true);
 		expect(fs.existsSync(newPath)).toBe(false);
 	});
