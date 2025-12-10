@@ -54,13 +54,13 @@
 
 在 `mcp.json` 中添加以下配置。使用 `npx` 命令会自动使用已安装的最新版本。
 
-```json
+```js
 {
   "mcpServers": {
-    "mcp-tsmorph-refactor": { // 任意のサーバー名
+    "mcp-tsmorph-refactor": { // 任意服务器名称
       "command": "npx",
       "args": ["-y", "@sirosuzume/mcp-tsmorph-refactor"],
-      "env": {} // 必要に応じてロギング設定などを追加
+      "env": {} // 根据需要添加日志设置等
     }
   }
 }
@@ -80,10 +80,10 @@ pnpm run build
 
 构建后，在 `mcp.json` 中进行以下配置，即可用 `node` 直接执行。
 
-```json
+```js
 {
   "mcpServers": {
-    "mcp-tsmorph-refactor-dev": { // 開発用など、別の名前を推奨
+    "mcp-tsmorph-refactor-dev": { // 开发用等，建议使用不同的名称
       "command": "node",
       // 从项目根目录的相对路径或绝对路径
       "args": ["/path/to/your/local/repo/dist/index.js"],
@@ -113,7 +113,7 @@ pnpm run build
 
 配置示例（在 `mcp.json` 中）:
 
-```json
+```js
 // ... (mcp.json 的其他配置)
       "env": {
         "LOG_LEVEL": "debug", // 输出调试级别的日志
@@ -186,7 +186,7 @@ pnpm format
     *   在 `args` 中指定 `scripts/mcp_launcher.js` 的路径（例如: `["path/to/your_project_root/scripts/mcp_launcher.js"]`）。也可以使用从项目根目录的相对路径（`["scripts/mcp_launcher.js"]`）。
 
     配置示例（`mcp.json`）:
-    ```json
+    ```js
     {
       "mcpServers": {
         "mcp-tsmorph-refactor": {
