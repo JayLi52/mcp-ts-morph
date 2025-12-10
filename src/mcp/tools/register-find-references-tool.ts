@@ -5,8 +5,8 @@ import { performance } from "node:perf_hooks";
 
 export function registerFindReferencesTool(server: McpServer): void {
 	server.tool(
-		"find_references_by_tsmorph",
-		`[使用 ts-morph] 在整个项目中查找给定位置的符号定义及其所有引用。
+		"find_references",
+		`在整个项目中查找给定位置的符号定义及其所有引用。
 
 基于 \`tsconfig.json\` 解析项目，定位该符号（函数、变量、类等）的定义位置及所有使用位置。
 

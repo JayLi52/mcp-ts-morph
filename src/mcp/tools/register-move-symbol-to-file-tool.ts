@@ -54,8 +54,8 @@ type MoveSymbolArgs = z.infer<typeof moveSymbolSchema>;
  */
 export function registerMoveSymbolToFileTool(server: McpServer): void {
 	server.tool(
-		"move_symbol_to_file_by_tsmorph",
-		`[使用 ts-morph] 将指定符号（函数、变量、类等）及其仅内部使用的依赖移动到新文件，并自动更新项目中的所有引用。适用于文件拆分和提升模块化的重构任务。
+		"move_symbol_to_file",
+		`将指定符号（函数、变量、类等）及其仅内部使用的依赖移动到新文件，并自动更新项目中的所有引用。适用于文件拆分和提升模块化的重构任务。
 
 通过 AST 分析识别符号的使用位置，并基于新文件位置修正 import/export 路径；同时移动该符号仅内部使用的依赖。
 

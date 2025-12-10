@@ -7,8 +7,8 @@ import { performance } from "node:perf_hooks";
 
 export function registerRemovePathAliasTool(server: McpServer): void {
 	server.tool(
-		"remove_path_alias_by_tsmorph",
-		`[使用 ts-morph] 将指定路径内 import/export 语句中的路径别名（如 '@/') 转换为相对路径。
+		"remove_path_alias",
+		`将指定路径内 import/export 语句中的路径别名（如 '@/') 转换为相对路径。
 
 基于 \`tsconfig.json\` 解析别名并计算相对路径。
 

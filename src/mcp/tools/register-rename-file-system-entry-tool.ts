@@ -42,8 +42,8 @@ type RenameArgs = z.infer<typeof renameSchema>;
 
 export function registerRenameFileSystemEntryTool(server: McpServer): void {
 	server.tool(
-		"rename_filesystem_entry_by_tsmorph",
-		`[使用 ts-morph] 重命名**一个或多个** TypeScript/JavaScript 文件**和/或文件夹**，并在整个项目中更新所有引用它们的 import/export 路径。
+		"rename_filesystem_entry",
+		`重命名**一个或多个** TypeScript/JavaScript 文件**和/或文件夹**，并在整个项目中更新所有引用它们的 import/export 路径。
 
 基于 \`tsconfig.json\` 解析项目，定位被重命名项的所有引用并自动修正路径。**支持相对路径、路径别名（例如 @/）、以及引用目录 index.ts 的导入（\`from '.'\` 或 \`from '..'\`）。** 在应用更改前会进行冲突检查。
 

@@ -5,8 +5,8 @@ import { performance } from "node:perf_hooks";
 
 export function registerRenameSymbolTool(server: McpServer): void {
 	server.tool(
-		"rename_symbol_by_tsmorph",
-		`[使用 ts-morph] 在整个项目中重命名 TypeScript/JavaScript 符号。
+		"rename_symbol",
+		`重命名 TypeScript/JavaScript 符号。
 
 通过 AST（抽象语法树）分析跟踪并更新引用，不仅限于定义处。适用于跨文件的重构任务。
 
