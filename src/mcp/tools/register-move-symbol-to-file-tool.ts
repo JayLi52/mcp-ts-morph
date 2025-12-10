@@ -20,28 +20,28 @@ const moveSymbolSchema = z.object({
 	tsconfigPath: z
 		.string()
 		.describe(
-			"Absolute path to the project's tsconfig.json file. Essential for ts-morph.",
+			"项目 tsconfig.json 的绝对路径（ts-morph 解析所需）",
 		),
 	originalFilePath: z
 		.string()
-		.describe("Absolute path to the file containing the symbol to move."),
+		.describe("包含待移动符号的文件的绝对路径。"),
 	targetFilePath: z
 		.string()
 		.describe(
-			"Absolute path to the destination file. Can be an existing file; if the path does not exist, a new file will be created.",
+			"目标文件的绝对路径。可为已存在文件；若路径不存在将创建新文件。",
 		),
-	symbolToMove: z.string().describe("The name of the symbol to move."),
+	symbolToMove: z.string().describe("要移动的符号名称。"),
 	declarationKindString: z
 		.string()
 		.optional()
 		.describe(
-			"Optional. The kind of the declaration as a string (e.g., 'VariableStatement', 'FunctionDeclaration', 'ClassDeclaration', 'InterfaceDeclaration', 'TypeAliasDeclaration', 'EnumDeclaration'). Providing this helps resolve ambiguity if multiple symbols share the same name.",
+			"可选。声明类型字符串（如 'VariableStatement'、'FunctionDeclaration' 等），用于同名符号时消除歧义。",
 		),
 	dryRun: z
 		.boolean()
 		.optional()
 		.default(false)
-		.describe("If true, only show intended changes without modifying files."),
+		.describe("为 true 时仅预览变更，不修改文件。"),
 });
 
 type MoveSymbolArgs = z.infer<typeof moveSymbolSchema>;
@@ -55,47 +55,45 @@ type MoveSymbolArgs = z.infer<typeof moveSymbolSchema>;
 export function registerMoveSymbolToFileTool(server: McpServer): void {
 	server.tool(
 		"move_symbol_to_file_by_tsmorph",
-		`[Uses ts-morph] Moves a specified symbol (function, variable, class, etc.) and its internal-only dependencies to a new file, automatically updating all references across the project. Aids refactoring tasks like file splitting and improving modularity.
+		`[使用 ts-morph] 将指定符号（函数、变量、类等）及其仅内部使用的依赖移动到新文件，并自动更新项目中的所有引用。适用于文件拆分和提升模块化的重构任务。
 
-Analyzes the AST (Abstract Syntax Tree) to identify usages of the symbol and corrects import/export paths based on the new file location. It also handles moving necessary internal dependencies (those used only by the symbol being moved).
+通过 AST 分析识别符号的使用位置，并基于新文件位置修正 import/export 路径；同时移动该符号仅内部使用的依赖。
 
-## Usage
+## 用法
 
-Use this tool for various code reorganization tasks:
+适用于以下代码重组场景：
 
-1.  **Moving a specific function/class/variable:** Relocate a specific piece of logic to a more appropriate file (e.g., moving a helper function from a general \`utils.ts\` to a feature-specific \`feature-utils.ts\`). **This tool moves the specified symbol and its internal-only dependencies.**
-2.  **Extracting or Moving related logic (File Splitting/Reorganization):** To split a large file or reorganize logic, move related functions, classes, types, or variables to a **different file (new or existing)** one by one using this tool. **You will need to run this tool multiple times, once for each top-level symbol you want to move.**
-3.  **Improving modularity:** Group related functionalities together by moving multiple symbols (functions, types, etc.) into separate, more focused files. **Run this tool for each symbol you wish to relocate.**
+1. **移动某个函数/类/变量：** 将逻辑移动到更合适的文件（如将通用 \`utils.ts\` 中的工具函数移动到特性文件 \`feature-utils.ts\`）。**本工具会移动指定符号及其仅内部使用的依赖。**
+2. **抽取/移动相关逻辑（文件拆分/重组）：** 拆分大文件或重组逻辑时，将相关函数、类、类型或变量逐个移动到**另一个文件（新建或已有）**。**需为每个顶级符号单独运行本工具。**
+3. **提升模块化：** 将相关功能聚合到更聚焦的文件中。**为每个需要移动的符号分别运行本工具。**
 
-ts-morph parses the project based on \`tsconfig.json\` to resolve references and perform the move safely, updating imports/exports automatically.
+ts-morph 会基于 \`tsconfig.json\` 解析并安全地执行移动，自动更新 import/export。
 
-## Parameters
+## 参数
 
-- tsconfigPath (string, required): Absolute path to the project\'s root \`tsconfig.json\`
-- originalFilePath (string, required): Absolute path to the file currently containing the symbol to move.
-- targetFilePath (string, required): Absolute path to the destination file. Can be an existing file; if the path does not exist, a new file will be created.
-- symbolToMove (string, required): The name of the **single top-level symbol** you want to move in this execution.
-- declarationKindString (string, optional): The kind of the declaration (e.g., \'VariableStatement\', \'FunctionDeclaration\'). Recommended to resolve ambiguity if multiple symbols share the same name.
-- dryRun (boolean, optional): If true, only show intended changes without modifying files. Defaults to false.
+- tsconfigPath（string，必填）：项目根 \`tsconfig.json\` 的绝对路径。
+- originalFilePath（string，必填）：当前包含待移动符号的文件的绝对路径。
+- targetFilePath（string，必填）：目标文件的绝对路径；可为已存在文件；若路径不存在将创建新文件。
+- symbolToMove（string，必填）：本次要移动的**单个顶级符号**的名称。
+- declarationKindString（string，可选）：声明类型字符串（如 \'VariableStatement\'、\'FunctionDeclaration\'），用于在同名符号情况下消除歧义。
+- dryRun（boolean，可选）：为 true 时仅预览变更，不修改文件。默认 false。
 
-## Result
+## 结果
 
-- On success: Returns a message confirming the move and reference updates, including a list of modified files (or files that would be modified if dryRun is true).
-- On failure: Returns an error message (e.g., symbol not found, default export, AST errors).
+- 成功：返回确认移动及引用更新的消息，并包含修改文件列表（或 dryRun 下将被修改的文件列表）。
+- 失败：返回错误信息（如符号未找到、默认导出限制、AST 操作错误等）。
 
-## Remarks
+## 说明
 
-- **Moves one top-level symbol per execution:** This tool is designed to move a single specified top-level symbol (and its internal-only dependencies) in each run. To move multiple related top-level symbols (e.g., several functions and types for file splitting), you need to invoke this tool multiple times, once for each symbol.
-- **Default exports cannot be moved.**
-- **Internal dependency handling:** Dependencies (functions, variables, types, etc.) used *only* by the moved symbol within the original file are moved along with it. Dependencies that are also used by other symbols remaining in the original file will stay, might gain an \`export\` keyword if they didn't have one, and will be imported by the new file where the symbol was moved. Symbols in the original file that are *not* dependencies of the moved symbol will remain untouched unless explicitly moved in a separate execution of this tool.
-- **Performance:** Moving symbols with many references in large projects might take time.`,
+- **每次执行移动一个顶级符号：** 本工具设计为每次移动一个指定的顶级符号（及其仅内部使用的依赖）。若需移动多个相关顶级符号（例如为文件拆分移动多组函数与类型），请对每个符号分别执行本工具。
+- **无法移动默认导出。**
+- **内部依赖处理：** 仅由该符号使用的依赖（函数、变量、类型等）会一同移动；其余在原文件仍被其他符号使用的依赖将保留，并在需要时添加 \`export\`，由新文件进行导入。与被移动符号无关的符号保持不变，除非在后续单独移动。
+- **性能：** 在大型项目或引用较多的符号上移动可能耗时。`,
 		moveSymbolSchema.extend({
 			symbolToMove: z
 				.string()
-				.describe(
-					"The name of the single top-level symbol you want to move in this execution.",
-				),
-		}).shape,
+				.describe("本次执行要移动的单个顶级符号的名称。"),
+			}).shape,
 		async (args: MoveSymbolArgs) => {
 			const startTime = performance.now();
 			let message = "";
@@ -118,7 +116,7 @@ ts-morph parses the project based on \`tsconfig.json\` to resolve references and
 
 			if (declarationKindString && declarationKind === undefined) {
 				logger.warn(
-					`Invalid declarationKindString provided: '${declarationKindString}'. Proceeding without kind specification.`,
+					`提供的 declarationKindString 无效: '${declarationKindString}'。将不指定类型继续执行。`,
 				);
 			}
 
@@ -144,27 +142,27 @@ ts-morph parses the project based on \`tsconfig.json\` to resolve references and
 				changedFiles = getChangedFiles(project).map((sf) => sf.getFilePath());
 				changedFilesCount = changedFiles.length;
 
-				const baseMessage = `Moved symbol \"${symbolToMove}\" from ${originalFilePath} to ${targetFilePath}.`;
+				const baseMessage = `已将符号 \"${symbolToMove}\" 从 ${originalFilePath} 移动到 ${targetFilePath}。`;
 				const changedFilesList =
 					changedFiles.length > 0 ? changedFiles.join("\n - ") : "(No changes)";
 
 				if (dryRun) {
-					message = `Dry run: ${baseMessage}\nFiles that would be modified:\n - ${changedFilesList}`;
-					logger.info({ changedFiles }, "Dry run: Skipping save.");
+					message = `干跑：${baseMessage}\n将被修改的文件：\n - ${changedFilesList}`;
+					logger.info({ changedFiles }, "干跑：跳过保存。");
 				} else {
 					await project.save();
-					logger.debug("Project changes saved after symbol move.");
-					message = `${baseMessage}\nThe following files were modified:\n - ${changedFilesList}`;
+					logger.debug("移动符号后已保存项目变更。");
+					message = `${baseMessage}\n以下文件已被修改：\n - ${changedFilesList}`;
 				}
 				isError = false;
 			} catch (error) {
 				logger.error(
 					{ err: error, toolArgs: logArgs },
-					"Error executing move_symbol_to_file_by_tsmorph",
+					"执行 move_symbol_to_file_by_tsmorph 时出错",
 				);
 				const errorMessage =
 					error instanceof Error ? error.message : String(error);
-				message = `Error moving symbol: ${errorMessage}`;
+				message = `移动符号时出错: ${errorMessage}`;
 				isError = true;
 			} finally {
 				const endTime = performance.now();
@@ -172,24 +170,24 @@ ts-morph parses the project based on \`tsconfig.json\` to resolve references and
 
 				logger.info(
 					{
-						status: isError ? "Failure" : "Success",
+						status: isError ? "失败" : "成功",
 						durationMs: Number.parseFloat(durationMs.toFixed(2)),
 						changedFilesCount,
 						dryRun,
 					},
-					"move_symbol_to_file_by_tsmorph tool finished",
+					"move_symbol_to_file_by_tsmorph 工具执行完成",
 				);
 				try {
 					logger.flush();
 				} catch (flushErr) {
-					console.error("Failed to flush logs:", flushErr);
+					console.error("刷新日志失败:", flushErr);
 				}
 			}
 
 			const endTime = performance.now();
 			const durationMs = endTime - startTime;
 			const durationSec = (durationMs / 1000).toFixed(2);
-			const finalMessage = `${message}\nStatus: ${isError ? "Failure" : "Success"}\nProcessing time: ${durationSec} seconds`;
+			const finalMessage = `${message}\n状态: ${isError ? "失败" : "成功"}\n处理耗时: ${durationSec} 秒`;
 
 			return {
 				content: [{ type: "text", text: finalMessage }],

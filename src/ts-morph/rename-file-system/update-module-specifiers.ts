@@ -22,7 +22,7 @@ export function updateModuleSpecifiers(
 	const PRESERVE_EXTENSIONS = [".js", ".jsx", ".json", ".mjs", ".cjs"];
 	logger.debug(
 		{ count: allDeclarationsToUpdate.length },
-		"Starting module specifier updates",
+		"开始更新模块说明符",
 	);
 
 	let updatedCount = 0;
@@ -41,7 +41,7 @@ export function updateModuleSpecifiers(
 			skippedCount++;
 			logger.trace(
 				{ referencingFilePath, kind: declaration.getKindName() },
-				"Skipping declaration with no module specifier",
+				"该声明没有模块说明符，跳过",
 			);
 			continue;
 		}
@@ -54,7 +54,7 @@ export function updateModuleSpecifiers(
 			skippedCount++;
 			logger.warn(
 				{ resolvedPath, referencingFilePath: newReferencingFilePath },
-				"Could not determine new path for resolved path - Skipping update.",
+				"无法确定解析路径的新路径，跳过更新",
 			);
 			continue;
 		}
@@ -70,7 +70,7 @@ export function updateModuleSpecifiers(
 			!path.extname(originalSpecifierText);
 		logger.trace(
 			{ originalSpecifierText, wasIndexSimplified },
-			"Checked original specifier for index simplification",
+			"已根据原始说明符检查是否简化 index",
 		);
 
 		if (wasPathAlias) {
@@ -83,7 +83,7 @@ export function updateModuleSpecifiers(
 					newResolved: newResolvedPath,
 					originalSpecifier: originalSpecifierText,
 				},
-				"Path alias preservation not fully implemented yet. Calculating relative path as fallback.",
+				"路径别名的保留尚未完全实现，暂以相对路径作为回退",
 			);
 			// ★★★ 此处需要计算别名路径的逻辑 ★★★
 			// 例：const newAliasPath = calculateAliasPath(project, newReferencingFilePath, newResolvedPath);
@@ -125,9 +125,9 @@ export function updateModuleSpecifiers(
 					newResolved: newResolvedPath,
 					originalSpecifier: originalSpecifierText,
 					wasPathAlias,
-					newSpecifier, // newRelativePath から変更
+					newSpecifier, // 由 newRelativePath 改为 newSpecifier
 				},
-				"Error setting module specifier, skipping update",
+				"设置模块说明符时出错，已跳过更新",
 			);
 		}
 	}
@@ -135,6 +135,6 @@ export function updateModuleSpecifiers(
 	const durationMs = (performance.now() - startTime).toFixed(2);
 	logger.debug(
 		{ updated: updatedCount, skipped: skippedCount, durationMs },
-		"Finished module specifier updates",
+		"模块说明符更新完成",
 	);
 }

@@ -18,7 +18,7 @@ export function findIdentifierNode(
 ): Identifier {
 	const sourceFile = project.getSourceFile(targetFilePath);
 	if (!sourceFile)
-		throw new Error(`ファイルが見つかりません: ${targetFilePath}`);
+		throw new Error(`未找到文件: ${targetFilePath}`);
 
 	let positionOffset: number;
 	try {
@@ -28,7 +28,7 @@ export function findIdentifierNode(
 		);
 	} catch (error) {
 		throw new Error(
-			`指定位置 (${position.line}:${position.column}) はファイルの範囲外か無効です`,
+			`指定位置 (${position.line}:${position.column}) 超出文件范围或无效`,
 		);
 	}
 
@@ -36,7 +36,7 @@ export function findIdentifierNode(
 
 	if (!node) {
 		throw new Error(
-			`指定位置 (${position.line}:${position.column}) にノードが見つかりません`,
+			`在指定位置 (${position.line}:${position.column}) 未找到节点`,
 		);
 	}
 
@@ -51,7 +51,7 @@ export function findIdentifierNode(
 	}
 
 	throw new Error(
-		`指定位置 (${position.line}:${position.column}) は Identifier ではありません`,
+		`指定位置 (${position.line}:${position.column}) 不是 Identifier`,
 	);
 }
 
@@ -66,7 +66,7 @@ export function validateSymbol(
 		return;
 	}
 	throw new Error(
-		`シンボル名が一致しません (期待: ${expectedSymbolName}, 実際: ${identifier.getText()})`,
+		`符号名不匹配（期望: ${expectedSymbolName}, 实际: ${identifier.getText()}）`,
 	);
 }
 

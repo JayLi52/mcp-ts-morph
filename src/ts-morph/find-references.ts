@@ -104,6 +104,6 @@ function getLineText(sourceFile: SourceFile, lineNumber: number): string {
 	// 找不到对应行时，是抛错还是返回空字符串取决于约定
 	// 这里更自然的做法是抛出错误
 	throw new Error(
-		`Line ${lineNumber} not found in file ${sourceFile.getFilePath()}`,
+		`在文件 ${sourceFile.getFilePath()} 中未找到第 ${lineNumber} 行`,
 	);
 }

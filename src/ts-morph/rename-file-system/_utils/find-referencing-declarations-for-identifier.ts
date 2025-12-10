@@ -16,7 +16,7 @@ export function findReferencingDeclarationsForIdentifier(
 
 	logger.trace(
 		{ identifierText: identifierNode.getText() },
-		"Finding references for identifier",
+		"查找该标识符的引用",
 	);
 
 	const references = identifierNode.findReferencesAsNodes();
@@ -37,7 +37,7 @@ export function findReferencingDeclarationsForIdentifier(
 			identifierText: identifierNode.getText(),
 			count: referencingDeclarations.size,
 		},
-		"Found referencing declarations for identifier",
+		"已找到该标识符的引用声明",
 	);
 	return referencingDeclarations;
 }

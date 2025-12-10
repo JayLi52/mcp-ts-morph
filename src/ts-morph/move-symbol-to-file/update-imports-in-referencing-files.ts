@@ -144,14 +144,14 @@ export async function updateImportsInReferencingFiles(
 ): Promise<void> {
 	const oldSourceFile = project.getSourceFile(oldFilePath);
 	if (!oldSourceFile) {
-		throw new Error(`Source file not found at old path: ${oldFilePath}`);
+		throw new Error(`旧路径处的源文件未找到: ${oldFilePath}`);
 	}
 
 	const declarationsToUpdate =
 		await findDeclarationsReferencingFile(oldSourceFile);
 	logger.debug(
 		{ count: declarationsToUpdate.length, oldFile: oldFilePath },
-		"Found declarations potentially referencing the old file path.",
+		"找到可能引用旧文件路径的声明",
 	);
 
 	for (const {
@@ -176,7 +176,7 @@ export async function updateImportsInReferencingFiles(
 					symbol: symbolName,
 					kind: declaration.getKindName(),
 				},
-				"Declaration does not reference the target symbol (or is not a named import/export). Skipping.",
+				"声明未引用目标符号（或非命名导入/导出），跳过",
 			);
 			continue;
 		}
@@ -187,9 +187,9 @@ export async function updateImportsInReferencingFiles(
 					file: referencingFilePath,
 					symbol: symbolName,
 					kind: declaration.getKindName(),
-					action: isOnlySpecifier ? "Remove Declaration" : "Remove Specifier",
+					action: isOnlySpecifier ? "移除声明" : "移除指定符号",
 				},
-				"Removing import/export of moved symbol from its new file (self-reference prevention)",
+				"从新文件中移除已移动符号的导入/导出（避免自引用）",
 			);
 			if (isOnlySpecifier) {
 				declaration.remove();
@@ -221,10 +221,10 @@ export async function updateImportsInReferencingFiles(
 						from: currentSpecifier,
 						to: newRelativePath,
 						kind: declaration.getKindName(),
-						action: "Update Path (Only Named Symbol)",
-					},
-					"Updating module specifier for single named import/export declaration",
-				);
+					action: "更新路径（仅该命名符号）",
+				},
+				"更新仅包含该命名符号的导入/导出声明的模块路径",
+			);
 				moduleSpecifier.setLiteralValue(newRelativePath);
 			}
 		} else if (symbolSpecifier) {

@@ -1,9 +1,4 @@
-import { valueA } from "./moduleA"; // 依赖 moduleA
-
-// 导出的函数
-export function utilFunc1(): void {
-	console.log("Util Func 1 executed with value:", valueA);
-}
+// 依赖 moduleA 的 utilFunc1 已迁移到 utils-funcs.ts
 
 // 不导出的内部辅助函数
 function internalUtil(): string {

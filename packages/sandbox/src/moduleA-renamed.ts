@@ -1,6 +1,6 @@
 export const valueA = "Value from Module A";
 
-export function funcA(): string {
+export function runA(): string {
 	console.log("Function A executed");
 	return "Result from Func A";
 }
@@ -10,4 +10,3 @@ export interface InterfaceA {
 	name: string;
 }
 
-// 如有需要，后续可添加更复杂的场景

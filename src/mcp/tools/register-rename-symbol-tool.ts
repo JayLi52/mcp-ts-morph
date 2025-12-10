@@ -6,76 +6,54 @@ import { performance } from "node:perf_hooks";
 export function registerRenameSymbolTool(server: McpServer): void {
 	server.tool(
 		"rename_symbol_by_tsmorph",
-		// Note for developers:
-		// The following English description is primarily intended for the LLM's understanding.
-		// Please refer to the JSDoc comment above for the original Japanese description.
-		`[Uses ts-morph] Renames TypeScript/JavaScript symbols across the project.
+		`[使用 ts-morph] 在整个项目中重命名 TypeScript/JavaScript 符号。
 
-Analyzes the AST (Abstract Syntax Tree) to track and update references 
-throughout the project, not just the definition site.
-Useful for cross-file refactoring tasks during Vibe Coding.
+通过 AST（抽象语法树）分析跟踪并更新引用，不仅限于定义处。适用于跨文件的重构任务。
 
-## Usage
+## 用法
 
-Use this tool, for example, when you change a function name defined in one file 
-and want to reflect that change in other files that import and use it.
-ts-morph parses the project based on \`tsconfig.json\` to resolve symbol references 
-and perform the rename.
+例如，当你在某个文件中更改函数名，并希望其他导入并使用它的文件也随之更新时，使用此工具。ts-morph 将基于 \`tsconfig.json\` 解析项目以解析符号引用并执行重命名。
 
-1.  Specify the exact location (file path, line, column) of the symbol 
-    (function name, variable name, class name, etc.) you want to rename. 
-    This is necessary for ts-morph to identify the target Identifier node in the AST.
-2.  Specify the current symbol name and the new symbol name.
-3.  It\'s recommended to first run with \`dryRun: true\` to check which files 
-    ts-morph will modify.
-4.  If the preview looks correct, run with \`dryRun: false\` (or omit it) 
-    to actually save the changes to the file system.
+1. 指定要重命名的符号的精确位置（文件路径、行、列），如函数名、变量名、类名等，以便定位 AST 中的目标 Identifier 节点。
+2. 指定当前符号名与新的符号名。
+3. 建议先使用 \`dryRun: true\` 预览会被修改的文件。
+4. 如果预览正确，使用 \`dryRun: false\`（或省略）以实际写入文件系统。
 
-## Parameters
+## 参数
 
-- tsconfigPath (string, required): Path to the project\'s root \`tsconfig.json\` file. 
-  Essential for ts-morph to correctly parse the project structure and file references. **Must be an absolute path (relative paths can be misinterpreted).**
-- targetFilePath (string, required): Path to the file where the symbol to be renamed 
-  is defined (or first appears). **Must be an absolute path (relative paths can be misinterpreted).**
-- position (object, required): The exact position on the symbol to be renamed. 
-  Serves as the starting point for ts-morph to locate the AST node.
-  - line (number, required): 1-based line number, typically obtained from an editor.
-  - column (number, required): 1-based column number (position of the first character 
-    of the symbol name), typically obtained from an editor.
-- symbolName (string, required): The current name of the symbol before renaming. 
-  Used to verify against the node name found at the specified position.
-- newName (string, required): The new name for the symbol after renaming.
-- dryRun (boolean, optional): If set to true, prevents ts-morph from making and saving 
-  file changes, returning only the list of files that would be affected. 
-  Useful for verification. Defaults to false.
+- tsconfigPath（string，必填）：项目根 \`tsconfig.json\` 的路径。用于正确解析项目结构与文件引用。**必须是绝对路径（相对路径可能被误解）。**
+- targetFilePath（string，必填）：包含待重命名符号的文件路径（或首次出现位置）。**必须是绝对路径。**
+- position（object，必填）：待重命名符号的精确位置，是 ts-morph 定位 AST 节点的起点。
+  - line（number，必填）：从 1 开始的行号。
+  - column（number，必填）：从 1 开始的列号（符号名首字符位置）。
+- symbolName（string，必填）：重命名前的符号名，用于与指定位置处的节点名称进行校验。
+- newName（string，必填）：重命名后的符号名。
+- dryRun（boolean，可选）：若为 true，不写入文件，仅返回受影响的文件列表，便于校验。默认 false。
 
-## Result
+## 结果
 
-- On success: Returns a message containing the list of file paths modified 
-  (or scheduled to be modified if dryRun) by the rename.
-- On failure: Returns a message indicating the error.`,
+- 成功：返回被修改的文件路径列表（若为 dryRun，则为预期修改列表）。
+- 失败：返回错误信息。`,
 		{
 			tsconfigPath: z
 				.string()
-				.describe("Path to the project's tsconfig.json file."),
+				.describe("项目 tsconfig.json 的路径。"),
 			targetFilePath: z
 				.string()
-				.describe("Path to the file containing the symbol to rename."),
+				.describe("包含待重命名符号的文件路径。"),
 			position: z
 				.object({
-					line: z.number().describe("1-based line number."),
-					column: z.number().describe("1-based column number."),
+					line: z.number().describe("从 1 开始的行号。"),
+					column: z.number().describe("从 1 开始的列号。"),
 				})
-				.describe("The exact position of the symbol to rename."),
-			symbolName: z.string().describe("The current name of the symbol."),
-			newName: z.string().describe("The new name for the symbol."),
+				.describe("待重命名符号的精确位置。"),
+				symbolName: z.string().describe("当前符号名。"),
+				newName: z.string().describe("新的符号名。"),
 			dryRun: z
 				.boolean()
 				.optional()
 				.default(false)
-				.describe(
-					"If true, only show intended changes without modifying files.",
-				),
+					.describe("为 true 时仅预览变更，不修改文件。"),
 		},
 		async (args) => {
 			const startTime = performance.now();
@@ -104,26 +82,26 @@ and perform the rename.
 				const changedFilesList =
 					result.changedFiles.length > 0
 						? result.changedFiles.join("\n - ")
-						: "(No changes)";
+						: "(无变更)";
 
 				if (dryRun) {
-					message = `Dry run complete: Renaming symbol '${symbolName}' to '${newName}' would modify the following files:\n - ${changedFilesList}`;
+					message = `干跑完成：将符号 '${symbolName}' 重命名为 '${newName}' 会修改以下文件:\n - ${changedFilesList}`;
 				} else {
-					message = `Rename successful: Renamed symbol '${symbolName}' to '${newName}'. The following files were modified:\n - ${changedFilesList}`;
+					message = `重命名成功：已将符号 '${symbolName}' 重命名为 '${newName}'。已修改以下文件:\n - ${changedFilesList}`;
 				}
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error ? error.message : String(error);
-				message = `Error during rename process: ${errorMessage}`;
+				message = `重命名过程中出错: ${errorMessage}`;
 				isError = true;
 			} finally {
 				const endTime = performance.now();
 				duration = ((endTime - startTime) / 1000).toFixed(2);
 			}
 
-			const finalMessage = `${message}\nStatus: ${
-				isError ? "Failure" : "Success"
-			}\nProcessing time: ${duration} seconds`;
+			const finalMessage = `${message}\n状态: ${
+				isError ? "失败" : "成功"
+			}\n处理耗时: ${duration} 秒`;
 
 			return {
 				content: [{ type: "text", text: finalMessage }],

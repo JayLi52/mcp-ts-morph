@@ -37,7 +37,7 @@ async function findAllDeclarationsToUpdate(
 			count: renameOperations.length,
 			paths: renameOperations.map((op) => op.oldPath),
 		},
-		"[Experimental] Finding declarations referencing exported symbols of renamed items",
+		"[实验性] 查找引用被重命名项导出符号的声明",
 	);
 
 	for (const renameOperation of renameOperations) {
@@ -98,12 +98,12 @@ async function findAllDeclarationsToUpdate(
 		const durationMs = (performance.now() - startTime).toFixed(2);
 		logger.debug(
 			{ declarationCount: uniqueDeclarationsToUpdate.length, durationMs },
-			"[Experimental] Finished finding declarations to update via symbols",
+			"[实验性] 基于符号的声明查找完成",
 		);
 		if (uniqueDeclarationsToUpdate.length > 0) {
 			logger.trace(
 				{ declarations: logData },
-				"Detailed declarations found via symbols",
+				"通过符号查找到的声明详情",
 			);
 		}
 	}
@@ -140,7 +140,7 @@ export async function renameFileSystemEntry({
 		})),
 		dryRun,
 	};
-	logger.info({ props: logProps }, "renameFileSystemEntry started");
+	logger.info({ props: logProps }, "renameFileSystemEntry 开始执行");
 
 	let changedFilePaths: string[] = [];
 	let errorOccurred = false;
@@ -176,35 +176,35 @@ export async function renameFileSystemEntry({
 					count: changed.length,
 					durationMs: (performance.now() - saveStart).toFixed(2),
 				},
-				"Saved project changes",
+				"已保存项目变更",
 			);
 		} else if (dryRun) {
-			logger.info({ count: changed.length }, "Dry run: Skipping save");
+			logger.info({ count: changed.length }, "干跑：跳过保存");
 		} else {
-			logger.info("No changes detected to save");
+			logger.info("无可保存的变更");
 		}
 	} catch (error) {
 		errorOccurred = true;
 		errorMessage = error instanceof Error ? error.message : String(error);
 		logger.error(
 			{ err: error, props: logProps },
-			`Error during rename process: ${errorMessage}`,
+			`重命名过程中出错: ${errorMessage}`,
 		);
 		if (error instanceof Error && error.name === "AbortError") {
 			throw error;
 		}
 	} finally {
 		const durationMs = (performance.now() - mainStartTime).toFixed(2);
-		const status = errorOccurred ? "Failure" : "Success";
+		const status = errorOccurred ? "失败" : "成功";
 		logger.info(
 			{ status, durationMs, changedFileCount: changedFilePaths.length },
-			"renameFileSystemEntry finished",
+			"renameFileSystemEntry 执行完成",
 		);
 	}
 
 	if (errorOccurred) {
 		throw new Error(
-			`Rename process failed: ${errorMessage}. See logs for details.`,
+			`重命名失败：${errorMessage}。请查看日志获取详情。`,
 		);
 	}
 

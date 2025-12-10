@@ -101,7 +101,7 @@ export async function removePathAlias({
 		const sourceFile = project.getSourceFile(targetPath);
 		if (!sourceFile) {
 			throw new Error(
-				`指定されたパスはプロジェクト内でディレクトリまたはソースファイルとして見つかりません: ${targetPath}`,
+				`在项目中未找到指定路径对应的目录或源文件: ${targetPath}`,
 			);
 		}
 		filesToProcess.push(sourceFile);

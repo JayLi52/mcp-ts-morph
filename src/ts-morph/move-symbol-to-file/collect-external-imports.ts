@@ -68,7 +68,7 @@ function getImportDetailsFromDeclarationNode(
 		);
 		if (!importClause) {
 			logger.error(
-				"NamespaceImport detected, but its parent is not an ImportClause. AST structure might be unexpected.",
+				"检测到 NamespaceImport，但其父节点不是 ImportClause。AST 结构可能异常。",
 			);
 			return undefined;
 		}
@@ -147,7 +147,7 @@ function findImportSourceForIdentifier(
 			importedName = specifier.getAliasNode()?.getText() ?? specifier.getName();
 		} else {
 			logger.warn(
-				`Unexpected state: Non-namespace and non-default import without specifier for ${identifier.getText()}`,
+				`异常状态：非命名空间且非默认导入却没有 specifier，对应标识符 ${identifier.getText()}`,
 			);
 			continue;
 		}

@@ -10,36 +10,32 @@ import logger from "../../utils/logger";
 const renameSchema = z.object({
 	tsconfigPath: z
 		.string()
-		.describe("Absolute path to the project's tsconfig.json file."),
+				.describe("项目 tsconfig.json 的绝对路径。"),
 	renames: z
 		.array(
 			z.object({
 				oldPath: z
 					.string()
-					.describe(
-						"The current absolute path of the file or folder to rename.",
-					),
+					.describe("待重命名的文件或文件夹的当前绝对路径。"),
 				newPath: z
 					.string()
-					.describe("The new desired absolute path for the file or folder."),
+					.describe("期望的新绝对路径。"),
 			}),
 		)
 		.nonempty()
-		.describe("An array of rename operations, each with oldPath and newPath."),
+				.describe("重命名操作数组，每项包含 oldPath 与 newPath。"),
 	dryRun: z
 		.boolean()
 		.optional()
 		.default(false)
-		.describe("If true, only show intended changes without modifying files."),
+				.describe("为 true 时仅预览变更，不修改文件。"),
 	timeoutSeconds: z
 		.number()
 		.int()
 		.positive()
 		.optional()
 		.default(120)
-		.describe(
-			"Maximum time in seconds allowed for the operation before it times out. Defaults to 120.",
-		),
+				.describe("操作允许的最大秒数，超过则超时。默认 120。"),
 });
 
 type RenameArgs = z.infer<typeof renameSchema>;
@@ -47,43 +43,43 @@ type RenameArgs = z.infer<typeof renameSchema>;
 export function registerRenameFileSystemEntryTool(server: McpServer): void {
 	server.tool(
 		"rename_filesystem_entry_by_tsmorph",
-		`[Uses ts-morph] Renames **one or more** TypeScript/JavaScript files **and/or folders** and updates all import/export paths referencing them throughout the project.
+		`[使用 ts-morph] 重命名**一个或多个** TypeScript/JavaScript 文件**和/或文件夹**，并在整个项目中更新所有引用它们的 import/export 路径。
 
-Analyzes the project based on \`tsconfig.json\` to find all references to the items being renamed and automatically corrects their paths. **Handles various path types, including relative paths, path aliases (e.g., @/), and imports referencing a directory\'s index.ts (\`from \'.\'\` or \`from \'..\'\`).** Checks for conflicts before applying changes.
+基于 \`tsconfig.json\` 解析项目，定位被重命名项的所有引用并自动修正路径。**支持相对路径、路径别名（例如 @/）、以及引用目录 index.ts 的导入（\`from '.'\` 或 \`from '..'\`）。** 在应用更改前会进行冲突检查。
 
-## Usage
+## 用法
 
-Use this tool when you want to rename/move multiple files or folders simultaneously (e.g., renaming \`util.ts\` to \`helper.ts\` and moving \`src/data\` to \`src/coreData\` in one operation) and need all the \`import\`/\`export\` statements referencing them to be updated automatically.
+当需要同时重命名/移动多个文件或文件夹（例如将 \`util.ts\` 重命名为 \`helper.ts\`，并在一次操作中将 \`src/data\` 移动到 \`src/coreData\`）并希望所有相关 \`import\`/\`export\` 语句自动更新时，使用此工具。
 
-1.  Specify the path to the project's \`tsconfig.json\` file. **Must be an absolute path.**
-2.  Provide an array of rename operations. Each object in the array must contain:
-    - \`oldPath\`: The current **absolute path** of the file or folder to rename.
-    - \`newPath\`: The new desired **absolute path** for the file or folder.
-3.  It\'s recommended to first run with \`dryRun: true\` to check which files will be affected.
-4.  If the preview looks correct, run with \`dryRun: false\` (or omit it) to actually save the changes to the file system.
+1. 指定项目 \`tsconfig.json\` 的路径。**必须是绝对路径。**
+2. 提供重命名操作数组。数组中的每个对象包含：
+    - \`oldPath\`：待重命名的文件或文件夹的**绝对路径**。
+    - \`newPath\`：期望的新**绝对路径**。
+3. 建议先使用 \`dryRun: true\` 预览受影响的文件。
+4. 预览正确后使用 \`dryRun: false\`（或省略）实际写入文件系统。
 
-## Parameters
+## 参数
 
-- tsconfigPath (string, required): Absolute path to the project's root \`tsconfig.json\` file. **Must be an absolute path.**
-- renames (array of objects, required): An array where each object specifies a rename operation with:
-    - oldPath (string, required): The current absolute path of the file or folder. **Must be an absolute path.**
-    - newPath (string, required): The new desired absolute path for the file or folder. **Must be an absolute path.**
-- dryRun (boolean, optional): If set to true, prevents making and saving file changes, returning only the list of files that would be affected. Defaults to false.
-- timeoutSeconds (number, optional): Maximum time in seconds allowed for the operation before it times out. Defaults to 120 seconds.
+- tsconfigPath（string，必填）：项目根 \`tsconfig.json\` 的绝对路径。**必须是绝对路径。**
+- renames（对象数组，必填）：每个对象描述一次重命名操作：
+    - oldPath（string，必填）：当前文件或文件夹的绝对路径。**必须是绝对路径。**
+    - newPath（string，必填）：新的绝对路径。**必须是绝对路径。**
+- dryRun（boolean，可选）：为 true 时不写入文件，仅返回受影响文件列表。默认 false。
+- timeoutSeconds（number，可选）：操作允许的最大秒数，超过将超时。默认 120 秒。
 
-## Result
+## 结果
 
-- On success: Returns a message listing the file paths modified or scheduled to be modified.
-- On failure: Returns a message indicating the error (e.g., path conflict, file not found, timeout).
+- 成功：返回已修改或计划修改的文件路径列表。
+- 失败：返回错误信息（例如路径冲突、文件不存在、超时）。
 
-## Remarks
-- **Symbol-based Reference Finding:** This tool now primarily uses symbol analysis (identifying exported functions, classes, variables, etc.) to find references across the project, rather than solely relying on path matching.
-- **Path Alias Handling:** Path aliases (e.g., \`@/\`) in import/export statements *are* updated, but they will be **converted to relative paths**. If preserving path aliases is crucial, consider using the \`remove_path_alias_by_tsmorph\` tool *before* renaming to convert them to relative paths preemptively.
-- **Index File Imports:** Imports referencing a directory's \`index.ts\` or \`index.tsx\` (e.g., \`import Component from '../components'\`) will be updated to reference the specific index file directly (e.g., \`import Component from '../components/index.tsx'\`).
-- **Known Limitation (Default Exports):** Currently, this tool may not correctly update references for default exports declared using an identifier (e.g., \`export default MyIdentifier;\`). Default exports using function or class declarations (e.g., \`export default function myFunction() {}\`) are generally handled.
-- **Performance:** Renaming numerous files/folders or operating in a very large project can take significant time due to the detailed symbol analysis and reference updates.
-- **Conflicts:** The tool checks for conflicts (e.g., renaming to an existing path, duplicate targets) before applying changes.
-- **Timeout:** Operations exceeding the specified \`timeoutSeconds\` will be canceled.`,
+## 说明
+- **基于符号的引用查找：** 主要通过符号分析（识别导出的函数、类、变量等）跨项目查找引用，而非仅依赖路径匹配。
+- **路径别名处理：** import/export 中的路径别名（例如 \`@/\`）会被更新，但会**转换为相对路径**。若需保留别名，建议在重命名前先使用 \`remove_path_alias_by_tsmorph\` 进行预转换。
+- **index 文件导入：** 引用目录 \`index.ts\` 或 \`index.tsx\` 的导入（例如 \`import Component from '../components'\`）将更新为具体的 index 文件路径（例如 \`import Component from '../components/index.tsx'\`）。
+- **已知限制（默认导出）：** 目前可能无法正确更新使用标识符的默认导出（例如 \`export default MyIdentifier;\`），函数或类声明式默认导出通常可处理。
+- **性能：** 在大型项目或一次重命名众多文件/文件夹时，符号分析与更新可能耗时较长。
+- **冲突：** 在应用更改前会检查冲突（例如重命名到已存在的路径、目标重复）。
+- **超时：** 超过 \`timeoutSeconds\` 的操作会被取消。`,
 		renameSchema.shape,
 		async (args: RenameArgs) => {
 			const startTime = performance.now();
@@ -97,7 +93,7 @@ Use this tool when you want to rename/move multiple files or folders simultaneou
 				content: { type: "text"; text: string }[];
 				isError: boolean;
 			} = {
-				content: [{ type: "text", text: "An unexpected error occurred." }],
+					content: [{ type: "text", text: "发生了未预期的错误。" }],
 				isError: true,
 			};
 
@@ -115,7 +111,7 @@ Use this tool when you want to rename/move multiple files or folders simultaneou
 
 			try {
 				timeoutId = setTimeout(() => {
-					const errorMessage = `Operation timed out after ${timeoutSeconds} seconds`;
+					const errorMessage = `操作在 ${timeoutSeconds} 秒内未完成，已超时`;
 					logger.error(
 						{ toolArgs: logArgs, durationSeconds: timeoutSeconds },
 						errorMessage,
@@ -136,34 +132,34 @@ Use this tool when you want to rename/move multiple files or folders simultaneou
 				const changedFilesList =
 					result.changedFiles.length > 0
 						? result.changedFiles.join("\n - ")
-						: "(No changes)";
-				const renameSummary = renames
-					.map(
-						(r) =>
-							`'${path.basename(r.oldPath)}' -> '${path.basename(r.newPath)}'`,
-					)
-					.join(", ");
+						: "(无变更)";
+					const renameSummary = renames
+						.map(
+							(r) =>
+								`'${path.basename(r.oldPath)}' -> '${path.basename(r.newPath)}'`,
+						)
+						.join(", ");
 
 				if (dryRun) {
-					message = `Dry run complete: Renaming [${renameSummary}] would modify the following files:\n - ${changedFilesList}`;
+					message = `干跑完成：重命名 [${renameSummary}] 将会修改以下文件：\n - ${changedFilesList}`;
 				} else {
-					message = `Rename successful: Renamed [${renameSummary}]. The following files were modified:\n - ${changedFilesList}`;
+					message = `重命名成功：已重命名 [${renameSummary}]。以下文件已被修改：\n - ${changedFilesList}`;
 				}
 				isError = false;
 			} catch (error) {
 				logger.error(
 					{ err: error, toolArgs: logArgs },
-					"Error executing rename_filesystem_entry_by_tsmorph",
+					"执行 rename_filesystem_entry_by_tsmorph 时出错",
 				);
 
 				if (error instanceof TimeoutError) {
-					message = `処理が ${error.durationSeconds} 秒以内に完了しなかったため、タイムアウトしました。操作はキャンセルされました.\nプロジェクトの規模が大きいか、変更箇所が多い可能性があります.`;
+					message = `操作未在 ${error.durationSeconds} 秒内完成，已超时并取消。\n项目规模较大或修改点过多。`;
 				} else if (error instanceof Error && error.name === "AbortError") {
-					message = `操作がキャンセルされました: ${error.message}`;
+					message = `操作已取消: ${error.message}`;
 				} else {
 					const errorMessage =
 						error instanceof Error ? error.message : String(error);
-					message = `Error during rename process: ${errorMessage}`;
+					message = `重命名过程中出错: ${errorMessage}`;
 				}
 				isError = true;
 			} finally {
@@ -180,20 +176,20 @@ Use this tool when you want to rename/move multiple files or folders simultaneou
 						changedFilesCount,
 						dryRun,
 					},
-					"rename_filesystem_entry_by_tsmorph tool finished",
+					"rename_filesystem_entry_by_tsmorph 工具执行完成",
 				);
 				try {
 					logger.flush();
-					logger.trace("Logs flushed after tool execution.");
+					logger.trace("工具执行后日志已刷新。");
 				} catch (flushErr) {
-					console.error("Failed to flush logs:", flushErr);
+					console.error("刷新日志失败:", flushErr);
 				}
 			}
 
 			const endTime = performance.now();
 			const durationMs = endTime - startTime;
 			const durationSec = (durationMs / 1000).toFixed(2);
-			const finalMessage = `${message}\nStatus: ${isError ? "Failure" : "Success"}\nProcessing time: ${durationSec} seconds`;
+			const finalMessage = `${message}\n状态: ${isError ? "失败" : "成功"}\n处理耗时: ${durationSec} 秒`;
 			resultPayload = {
 				content: [{ type: "text", text: finalMessage }],
 				isError: isError,

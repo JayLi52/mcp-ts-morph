@@ -8,42 +8,40 @@ import { performance } from "node:perf_hooks";
 export function registerRemovePathAliasTool(server: McpServer): void {
 	server.tool(
 		"remove_path_alias_by_tsmorph",
-		`[Uses ts-morph] Replaces path aliases (e.g., '@/') with relative paths in import/export statements within the specified target path.
+		`[使用 ts-morph] 将指定路径内 import/export 语句中的路径别名（如 '@/') 转换为相对路径。
 
-Analyzes the project based on \`tsconfig.json\` to resolve aliases and calculate relative paths.
+基于 \`tsconfig.json\` 解析别名并计算相对路径。
 
-## Usage
+## 用法
 
-Use this tool to convert alias paths like \`import Button from '@/components/Button'\` to relative paths like \`import Button from '../../components/Button'\`. This can be useful for improving portability or adhering to specific project conventions.
+将 \`import Button from '@/components/Button'\` 转换为 \`import Button from '../../components/Button'\`，有助于提高可移植性或满足项目约定。
 
-1.  Specify the **absolute path** to the project\`tsconfig.json\`.
-2.  Specify the **absolute path** to the target file or directory where path aliases should be removed.
-3.  Optionally, run with \`dryRun: true\` to preview the changes without modifying files.
+1. 指定项目 \`tsconfig.json\` 的**绝对路径**。
+2. 指定需要移除路径别名的目标文件或目录的**绝对路径**。
+3. 可选地使用 \`dryRun: true\` 预览变更而不修改文件。
 
-## Parameters
+## 参数
 
-- tsconfigPath (string, required): Absolute path to the project\`tsconfig.json\` file. **Must be an absolute path.**
-- targetPath (string, required): The absolute path to the file or directory to process. **Must be an absolute path.**
-- dryRun (boolean, optional): If true, only show intended changes without modifying files. Defaults to false.
+- tsconfigPath（string，必填）：项目 \`tsconfig.json\` 的绝对路径。**必须是绝对路径。**
+- targetPath（string，必填）：待处理的文件或目录的绝对路径。**必须是绝对路径。**
+- dryRun（boolean，可选）：为 true 时仅展示计划变更，不修改文件。默认 false。
 
-## Result
+## 结果
 
-- On success: Returns a message containing the list of file paths modified (or scheduled to be modified if dryRun).
-- On failure: Returns a message indicating the error.`,
+- 成功：返回已修改（或 dryRun 下计划修改）的文件路径列表。
+- 失败：返回错误信息。`,
 		{
 			tsconfigPath: z
 				.string()
-				.describe("Absolute path to the project's tsconfig.json file."),
+				.describe("项目 tsconfig.json 的绝对路径。"),
 			targetPath: z
 				.string()
-				.describe("Absolute path to the target file or directory."),
+				.describe("目标文件或目录的绝对路径。"),
 			dryRun: z
 				.boolean()
 				.optional()
 				.default(false)
-				.describe(
-					"If true, only show intended changes without modifying files.",
-				),
+					.describe("为 true 时仅展示变更计划，不修改文件。"),
 		},
 		async (args) => {
 			const startTime = performance.now();
@@ -79,24 +77,22 @@ Use this tool to convert alias paths like \`import Button from '@/components/But
 				const changedFilesList =
 					result.changedFiles.length > 0
 						? result.changedFiles.join("\n - ")
-						: "(No changes)";
-				const actionVerb = dryRun ? "scheduled for modification" : "modified";
-				message = `Path alias removal (${
-					dryRun ? "Dry run" : "Execute"
-				}): Within the specified path '${targetPath}', the following files were ${actionVerb}:\n - ${changedFilesList}`;
+						: "(无变更)";
+				const actionVerb = dryRun ? "计划修改" : "已修改";
+				message = `移除路径别名（${dryRun ? "干跑" : "执行"}）：在指定路径 '${targetPath}' 下，以下文件${actionVerb}:\n - ${changedFilesList}`;
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error ? error.message : String(error);
-				message = `Error during path alias removal process: ${errorMessage}`;
+				message = `移除路径别名过程中出错: ${errorMessage}`;
 				isError = true;
 			} finally {
 				const endTime = performance.now();
 				duration = ((endTime - startTime) / 1000).toFixed(2);
 			}
 
-			const finalMessage = `${message}\nStatus: ${
-				isError ? "Failure" : "Success"
-			}\nProcessing time: ${duration} seconds`;
+			const finalMessage = `${message}\n状态: ${
+				isError ? "失败" : "成功"
+			}\n处理耗时: ${duration} 秒`;
 
 			return {
 				content: [{ type: "text", text: finalMessage }],

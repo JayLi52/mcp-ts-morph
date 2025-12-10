@@ -6,43 +6,43 @@ import { performance } from "node:perf_hooks";
 export function registerFindReferencesTool(server: McpServer): void {
 	server.tool(
 		"find_references_by_tsmorph",
-		`[Uses ts-morph] Finds the definition and all references to a symbol at a given position throughout the project.
+		`[使用 ts-morph] 在整个项目中查找给定位置的符号定义及其所有引用。
 
-Analyzes the project based on \`tsconfig.json\` to locate the definition and all usages of the symbol (function, variable, class, etc.) specified by its position.
+基于 \`tsconfig.json\` 解析项目，定位该符号（函数、变量、类等）的定义位置及所有使用位置。
 
-## Usage
+## 用法
 
-Use this tool before refactoring to understand the impact of changing a specific symbol. It helps identify where a function is called, where a variable is used, etc.
+在重构前使用本工具以评估更改某个符号的影响，帮助识别函数调用点、变量使用点等。
 
-1.  Specify the **absolute path** to the project's \`tsconfig.json\`.
-2.  Specify the **absolute path** to the file containing the symbol you want to investigate.
-3.  Specify the exact **position** (line and column) of the symbol within the file.
+1. 指定项目 \`tsconfig.json\` 的**绝对路径**。
+2. 指定包含目标符号的文件的**绝对路径**。
+3. 指定该符号在文件内的**精确位置**（行、列）。
 
-## Parameters
+## 参数
 
-- tsconfigPath (string, required): Absolute path to the project's root \`tsconfig.json\` file. Essential for ts-morph to parse the project. **Must be an absolute path.**
-- targetFilePath (string, required): The absolute path to the file containing the symbol to find references for. **Must be an absolute path.**
-- position (object, required): The exact position of the symbol to find references for.
-  - line (number, required): 1-based line number.
-  - column (number, required): 1-based column number.
+- tsconfigPath（string，必填）：项目根 \`tsconfig.json\` 的绝对路径。用于 ts-morph 正确解析项目。**必须是绝对路径。**
+- targetFilePath（string，必填）：包含待查询符号的文件的绝对路径。**必须是绝对路径。**
+- position（object，必填）：待查询符号在文件中的精确位置。
+  - line（number，必填）：从 1 开始的行号。
+  - column（number，必填）：从 1 开始的列号。
 
-## Result
+## 结果
 
-- On success: Returns a message containing the definition location (if found) and a list of reference locations (file path, line number, column number, and line text).
-- On failure: Returns a message indicating the error.`,
+- 成功：返回定义位置（如存在）和引用位置列表（文件路径、行号、列号、该行文本）。
+- 失败：返回错误信息。`,
 		{
 			tsconfigPath: z
 				.string()
-				.describe("Absolute path to the project's tsconfig.json file."),
+				.describe("项目 tsconfig.json 的绝对路径。"),
 			targetFilePath: z
 				.string()
-				.describe("Absolute path to the file containing the symbol."),
+				.describe("包含目标符号的文件的绝对路径。"),
 			position: z
 				.object({
-					line: z.number().describe("1-based line number."),
-					column: z.number().describe("1-based column number."),
+					line: z.number().describe("从 1 开始的行号。"),
+					column: z.number().describe("从 1 开始的列号。"),
 				})
-				.describe("The exact position of the symbol."),
+				.describe("符号在文件中的精确位置。"),
 		},
 		async (args) => {
 			const startTime = performance.now();
@@ -61,15 +61,15 @@ Use this tool before refactoring to understand the impact of changing a specific
 				let resultText = "";
 
 				if (definition) {
-					resultText += "Definition:\n";
+					resultText += "定义：\n";
 					resultText += `- ${definition.filePath}:${definition.line}:${definition.column}\n`;
 					resultText += `  \`\`\`typescript\n  ${definition.text}\n  \`\`\`\n\n`;
 				} else {
-					resultText += "Definition not found.\n\n";
+					resultText += "未找到定义。\n\n";
 				}
 
 				if (references.length > 0) {
-					resultText += `References (${references.length} found):\n`;
+					resultText += `引用（找到 ${references.length} 处）：\n`;
 					const formattedReferences = references
 						.map(
 							(ref) =>
@@ -78,13 +78,13 @@ Use this tool before refactoring to understand the impact of changing a specific
 						.join("\n\n");
 					resultText += formattedReferences;
 				} else {
-					resultText += "References not found.";
+					resultText += "未找到引用。";
 				}
 				message = resultText.trim();
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error ? error.message : String(error);
-				message = `Error during reference search: ${errorMessage}`;
+				message = `查找引用时出错: ${errorMessage}`;
 				isError = true;
 			} finally {
 				const endTime = performance.now();
@@ -92,9 +92,9 @@ Use this tool before refactoring to understand the impact of changing a specific
 			}
 
 			// finally の外で return する
-			const finalMessage = `${message}\nStatus: ${
-				isError ? "Failure" : "Success"
-			}\nProcessing time: ${duration} seconds`;
+			const finalMessage = `${message}\n状态: ${
+				isError ? "失败" : "成功"
+			}\n处理耗时: ${duration} 秒`;
 
 			return {
 				content: [{ type: "text", text: finalMessage }],

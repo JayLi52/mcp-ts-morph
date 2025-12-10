@@ -35,9 +35,9 @@ export function parseEnvVariables(): EnvConfig {
 		// 仅在非测试环境输出错误
 		if (process.env.NODE_ENV !== "test") {
 			console.error(
-				"❌ 不正な環境変数:",
+				"❌ 环境变量不合法:",
 				parseResult.error.flatten().fieldErrors,
-				"\nデフォルトのロギング設定にフォールバックします。",
+				"\n已回退到默认日志配置。",
 			);
 		}
 		return {
@@ -71,11 +71,11 @@ function setupLogFileTransport(
 	try {
 		if (!fs.existsSync(logDir)) {
 			fs.mkdirSync(logDir, { recursive: true });
-			console.log(`ログディレクトリを作成しました: ${logDir}`);
+			console.log(`已创建日志目录: ${logDir}`);
 		}
 	} catch (err) {
 		console.error(
-			`ログディレクトリの確認/作成中にエラーが発生しました: ${logDir}`,
+			`检查/创建日志目录时发生错误: ${logDir}`,
 			err,
 		);
 		return undefined;
@@ -83,12 +83,12 @@ function setupLogFileTransport(
 
 	if (!fs.existsSync(logDir)) {
 		console.error(
-			`ファイルロギングは無効です: ログディレクトリ ${logDir} の存在を確認できませんでした。`,
+			`文件日志已禁用：无法确认日志目录 ${logDir} 的存在。`,
 		);
 		return undefined;
 	}
 
-	console.log(`ファイルにログ出力します: ${logFilePath}`);
+	console.log(`将日志输出到文件: ${logFilePath}`);
 	return {
 		target: "pino/file",
 		options: { destination: logFilePath, mkdir: false },
@@ -114,7 +114,7 @@ function setupConsoleTransport(
 		require.resolve("pino-pretty");
 		// 由于测试环境不需要，仅在开发环境输出日志
 		if (nodeEnv === "development") {
-			console.log("コンソールロギングに pino-pretty を使用します。");
+			console.log("控制台日志将使用 pino-pretty。");
 		}
 		return {
 			target: "pino-pretty",
@@ -124,7 +124,7 @@ function setupConsoleTransport(
 		// 由于测试环境不需要，仅在开发环境输出日志
 		if (nodeEnv === "development") {
 			console.log(
-				"pino-pretty が見つかりません。デフォルトの JSON コンソールロギングを使用します。",
+				"未找到 pino-pretty。将使用默认的 JSON 控制台日志。",
 			);
 		}
 		return undefined;
@@ -169,7 +169,7 @@ function exitHandler(
 		logger.flush();
 	} catch (flushErr) {
 		if (!isTestEnv) {
-			console.error("終了時のログフラッシュエラー:", flushErr);
+			console.error("退出时刷新日志出错:", flushErr);
 		}
 	}
 
@@ -177,16 +177,16 @@ function exitHandler(
 		err instanceof Error
 			? err
 			: err != null
-				? new Error(`終了コードまたは理由: ${err}`)
+				? new Error(`退出码或原因: ${err}`)
 				: null;
 
 	if (!isTestEnv) {
-		console.log(`プロセス終了 (${evt})...`);
+		console.log(`进程结束 (${evt})...`);
 	}
 
 	if (errorObj) {
 		if (!isTestEnv) {
-			console.error("終了エラー:", errorObj);
+			console.error("退出错误:", errorObj);
 		}
 		process.removeAllListeners("uncaughtException");
 		process.removeAllListeners("unhandledRejection");
@@ -221,9 +221,7 @@ export function setupExitHandlers(logger: pino.Logger) {
 	process.on("exit", (code) => {
 		const isTestEnv = process.env.NODE_ENV === "test";
 		if (!isTestEnv) {
-			console.log(
-				`プロセス終了 コード: ${code}。ログはフラッシュされているはずです。`,
-			);
+			console.log(`进程结束，代码: ${code}。日志应该已刷新。`);
 		}
 		// 由于某些测试会断言退出码，仅尝试刷新日志
 		try {

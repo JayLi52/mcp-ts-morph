@@ -29,16 +29,16 @@ const baseLogger = transport
 setupExitHandlers(baseLogger);
 
 // 在测试环境中不输出初始化日志
-if (!isTestEnv) {
-	baseLogger.info(
-		{
-			logLevel: env.LOG_LEVEL,
-			logOutput: env.LOG_OUTPUT,
-			logFilePath: env.LOG_OUTPUT === "file" ? env.LOG_FILE_PATH : undefined,
-			nodeEnv: env.NODE_ENV,
-		},
-		"ロガー初期化完了",
-	);
-}
+	if (!isTestEnv) {
+		baseLogger.info(
+			{
+				logLevel: env.LOG_LEVEL,
+				logOutput: env.LOG_OUTPUT,
+				logFilePath: env.LOG_OUTPUT === "file" ? env.LOG_FILE_PATH : undefined,
+				nodeEnv: env.NODE_ENV,
+			},
+			"日志初始化完成",
+		);
+	}
 
 export default baseLogger;

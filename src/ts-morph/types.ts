@@ -64,7 +64,7 @@ export type DependencyClassification =
  * 传递给 generateNewSourceFileContent 的外部导入信息的类型别名
  */
 export type NeededExternalImports = Map<
-	string, // moduleSpecifier (計算後の相対パス or オリジナル)
+	string, // 模块说明符（计算后的相对路径或原始路径）
 	{
 		names: Set<string>; // 命名导入或默认（'default'）或别名
 		declaration?: ImportDeclaration;

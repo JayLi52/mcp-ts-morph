@@ -29,7 +29,7 @@ export async function saveProjectChanges(
 			throw error;
 		}
 		const message = error instanceof Error ? error.message : String(error);
-		throw new Error(`ファイル保存中にエラーが発生しました: ${message}`);
+		throw new Error(`保存文件时发生错误: ${message}`);
 	}
 }
 
@@ -44,7 +44,7 @@ export function getTsConfigPaths(
 		if (typeof options.paths !== "object") {
 			logger.warn(
 				{ paths: options.paths },
-				"Compiler options 'paths' is not an object.",
+				"编译器选项 'paths' 不是对象。",
 			);
 			return undefined;
 		}
@@ -59,13 +59,13 @@ export function getTsConfigPaths(
 			} else {
 				logger.warn(
 					{ pathKey: key, pathValue: value },
-					"Invalid format for paths entry, skipping.",
+					"paths 条目格式无效，已跳过。",
 				);
 			}
 		}
 		return validPaths;
 	} catch (error) {
-		logger.error({ err: error }, "Failed to get compiler options or paths");
+		logger.error({ err: error }, "获取编译选项或 paths 失败");
 		return undefined;
 	}
 }
@@ -75,7 +75,7 @@ export function getTsConfigBaseUrl(project: Project): string | undefined {
 		const options = project.compilerOptions.get();
 		return options.baseUrl;
 	} catch (error) {
-		logger.error({ err: error }, "Failed to get compiler options baseUrl");
+		logger.error({ err: error }, "获取编译选项 baseUrl 失败");
 		return undefined;
 	}
 }
