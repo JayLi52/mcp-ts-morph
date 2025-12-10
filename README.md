@@ -1,4 +1,4 @@
-# MCP ts-morph 重构工具
+# MCP ts-morph 重构工具 ![NPM Version](https://img.shields.io/npm/v/mcp-tsmorph-refactor) ![NPM Downloads](https://img.shields.io/npm/d18m/mcp-tsmorph-refactor)
 
 ## 概述
 
