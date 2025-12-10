@@ -5,14 +5,16 @@ import * as path from "node:path";
 import * as os from "node:os";
 
 /**
- * テスト用の一時ディレクトリを作成
+ * 创建测试用的临时目录
+ * 用于在每个测试用例中创建独立的文件系统环境
  */
 function createTempDir(): string {
 	return fs.mkdtempSync(path.join(os.tmpdir(), "find-references-test-"));
 }
 
 /**
- * ディレクトリを再帰的に削除
+ * 递归删除目录
+ * 用于清理测试后创建的临时文件和目录
  */
 function removeTempDir(dir: string): void {
 	if (fs.existsSync(dir)) {
@@ -20,24 +22,45 @@ function removeTempDir(dir: string): void {
 	}
 }
 
+/**
+ * findSymbolReferences 函数的测试套件
+ * 
+ * 这个测试文件验证了 findSymbolReferences 函数在各种场景下
+ * 正确查找 TypeScript 符号（变量、函数、类、接口等）的定义和引用位置的能力。
+ * 
+ * 每个测试用例都会：
+ * 1. 创建临时的 TypeScript 项目结构（包括 tsconfig.json 和源文件）
+ * 2. 调用 findSymbolReferences 查找指定位置的符号
+ * 3. 验证返回的定义位置和所有引用位置是否正确
+ */
 describe("findSymbolReferences", () => {
 	let tempDir: string;
 
 	beforeEach(() => {
+		// 每个测试前创建新的临时目录，确保测试隔离
 		tempDir = createTempDir();
 	});
 
 	afterEach(() => {
+		// 每个测试后清理临时目录
 		removeTempDir(tempDir);
 	});
 
-	it("基本的な変数の参照を見つけることができる", async () => {
-		// ファイルシステムにテストプロジェクトを作成
+	/**
+	 * 测试：能够找到基本变量的引用
+	 * 
+	 * 验证函数能够：
+	 * - 找到导出变量的定义位置
+	 * - 找到同一文件内对变量的引用
+	 * - 找到其他文件中通过 import 导入后的使用位置
+	 */
+	it("能够找到基本变量的引用", async () => {
+		// 在文件系统中创建测试项目结构
 		const tsconfigPath = path.join(tempDir, "tsconfig.json");
 		const srcDir = path.join(tempDir, "src");
 		fs.mkdirSync(srcDir, { recursive: true });
 
-		// tsconfig.json を作成
+		// 创建 tsconfig.json 配置文件
 		fs.writeFileSync(
 			tsconfigPath,
 			JSON.stringify(
@@ -56,8 +79,10 @@ describe("findSymbolReferences", () => {
 			),
 		);
 
-		// テストファイルを作成
+		// 创建测试文件
+		// utils.ts: 定义并导出 myVariable，并在 helperFunction 中使用它
 		const utilsPath = path.join(srcDir, "utils.ts");
+		// main.ts: 导入 myVariable 并在 console.log 中使用
 		const mainPath = path.join(srcDir, "main.ts");
 
 		fs.writeFileSync(
@@ -79,41 +104,49 @@ const result = helperFunction();
 `,
 		);
 
-		// myVariable の参照を検索（定義位置）
+		// 查找 myVariable 的引用（从定义位置开始）
 		const result = await findSymbolReferences({
 			tsconfigPath,
 			targetFilePath: utilsPath,
-			position: { line: 1, column: 14 }, // "myVariable" の位置
+			position: { line: 1, column: 14 }, // "myVariable" 的位置
 		});
 
-		// 定義位置の確認
+		// 验证定义位置是否正确
 		expect(result.definition).toBeTruthy();
 		expect(result.definition?.filePath).toBe(utilsPath);
 		expect(result.definition?.line).toBe(1);
 		expect(result.definition?.text).toContain("myVariable");
 
-		// 参照箇所の確認（定義箇所は除外される）
-		// インポート文での参照も含まれる
+		// 验证引用位置（定义位置会被排除）
+		// 包括 import 语句中的引用
 		expect(result.references.length).toBeGreaterThanOrEqual(2);
 
-		// utils.ts内での参照
+		// 验证 utils.ts 文件内的引用（helperFunction 中使用 myVariable）
 		const utilsRef = result.references.find(
 			(ref) => ref.filePath === utilsPath && ref.line === 4,
 		);
 		expect(utilsRef).toBeTruthy();
 
-		// main.ts内での参照（インポート文とconsole.log）
+		// 验证 main.ts 文件内的引用（import 语句和 console.log）
 		const mainRefs = result.references.filter(
 			(ref) => ref.filePath === mainPath,
 		);
 		expect(mainRefs.length).toBeGreaterThanOrEqual(1);
 
-		// console.logでの参照が含まれていることを確認
+		// 确认 console.log 中的引用被包含
 		const consoleLogRef = mainRefs.find((ref) => ref.line === 3);
 		expect(consoleLogRef).toBeTruthy();
 	});
 
-	it("関数の参照を見つけることができる", async () => {
+	/**
+	 * 测试：能够找到函数的引用
+	 * 
+	 * 验证函数能够：
+	 * - 找到函数定义位置
+	 * - 找到同一文件内对函数的调用
+	 * - 找到其他文件中通过 import 导入后的函数调用
+	 */
+	it("能够找到函数的引用", async () => {
 		const tsconfigPath = path.join(tempDir, "tsconfig.json");
 		const srcDir = path.join(tempDir, "src");
 		fs.mkdirSync(srcDir, { recursive: true });
@@ -139,6 +172,7 @@ const result = helperFunction();
 		const functionsPath = path.join(srcDir, "functions.ts");
 		const usagePath = path.join(srcDir, "usage.ts");
 
+		// functions.ts: 定义 calculate 函数，并在 processData 中调用它
 		fs.writeFileSync(
 			functionsPath,
 			`export function calculate(a: number, b: number): number {
@@ -152,6 +186,7 @@ export function processData() {
 `,
 		);
 
+		// usage.ts: 导入并调用 calculate 函数
 		fs.writeFileSync(
 			usagePath,
 			`import { calculate, processData } from "./functions";
@@ -162,38 +197,46 @@ processData();
 `,
 		);
 
-		// calculate 関数の参照を検索
+		// 查找 calculate 函数的引用
 		const result = await findSymbolReferences({
 			tsconfigPath,
 			targetFilePath: functionsPath,
-			position: { line: 1, column: 17 }, // "calculate" の位置
+			position: { line: 1, column: 17 }, // "calculate" 的位置
 		});
 
 		expect(result.definition).toBeTruthy();
 		expect(result.definition?.filePath).toBe(functionsPath);
 
-		// 参照箇所（定義を除く）
-		// インポート文での参照も含まれる
+		// 验证引用位置（定义位置会被排除）
+		// 包括 import 语句中的引用
 		expect(result.references.length).toBeGreaterThanOrEqual(2);
 
-		// functions.ts内での参照
+		// 验证 functions.ts 文件内的引用（processData 中调用 calculate）
 		const internalRef = result.references.find(
 			(ref) => ref.filePath === functionsPath && ref.line === 6,
 		);
 		expect(internalRef).toBeTruthy();
 
-		// usage.ts内での参照
+		// 验证 usage.ts 文件内的引用
 		const externalRefs = result.references.filter(
 			(ref) => ref.filePath === usagePath,
 		);
 		expect(externalRefs.length).toBeGreaterThanOrEqual(1);
 
-		// calculate(5, 3)の呼び出しが含まれていることを確認
+		// 确认 calculate(5, 3) 的调用被包含
 		const callRef = externalRefs.find((ref) => ref.line === 3);
 		expect(callRef).toBeTruthy();
 	});
 
-	it("クラスの参照を見つけることができる", async () => {
+	/**
+	 * 测试：能够找到类的引用
+	 * 
+	 * 验证函数能够：
+	 * - 找到类定义位置
+	 * - 找到其他类通过 extends 继承该类的位置
+	 * - 找到其他文件中通过 new 关键字实例化该类的位置
+	 */
+	it("能够找到类的引用", async () => {
 		const tsconfigPath = path.join(tempDir, "tsconfig.json");
 		const srcDir = path.join(tempDir, "src");
 		fs.mkdirSync(srcDir, { recursive: true });
@@ -219,6 +262,7 @@ processData();
 		const modelsPath = path.join(srcDir, "models.ts");
 		const appPath = path.join(srcDir, "app.ts");
 
+		// models.ts: 定义 User 类，Admin 类继承 User
 		fs.writeFileSync(
 			modelsPath,
 			`export class User {
@@ -237,6 +281,7 @@ export class Admin extends User {
 `,
 		);
 
+		// app.ts: 导入并实例化 User 类
 		fs.writeFileSync(
 			appPath,
 			`import { User, Admin } from "./models";
@@ -248,33 +293,39 @@ console.log(user.greet());
 `,
 		);
 
-		// User クラスの参照を検索
+		// 查找 User 类的引用
 		const result = await findSymbolReferences({
 			tsconfigPath,
 			targetFilePath: modelsPath,
-			position: { line: 1, column: 14 }, // "User" の位置
+			position: { line: 1, column: 14 }, // "User" 的位置
 		});
 
 		expect(result.definition).toBeTruthy();
 		expect(result.definition?.filePath).toBe(modelsPath);
 
-		// 参照箇所
+		// 验证引用位置
 		expect(result.references.length).toBeGreaterThanOrEqual(2);
 
-		// Admin クラスでの継承
+		// 验证 Admin 类中的继承引用（extends User）
 		const extendsRef = result.references.find(
 			(ref) => ref.filePath === modelsPath && ref.text.includes("extends"),
 		);
 		expect(extendsRef).toBeTruthy();
 
-		// app.tsでのインスタンス化
+		// 验证 app.ts 中的实例化引用（new User）
 		const instantiationRef = result.references.find(
 			(ref) => ref.filePath === appPath && ref.text.includes("new User"),
 		);
 		expect(instantiationRef).toBeTruthy();
 	});
 
-	it("存在しないシンボルに対してエラーをスローする", async () => {
+	/**
+	 * 测试：对不存在的符号抛出错误
+	 * 
+	 * 验证当指定了无效的位置（如文件不存在的行号）时，
+	 * 函数能够正确抛出错误，而不是返回错误的结果。
+	 */
+	it("对不存在的符号抛出错误", async () => {
 		const tsconfigPath = path.join(tempDir, "tsconfig.json");
 		const srcDir = path.join(tempDir, "src");
 		fs.mkdirSync(srcDir, { recursive: true });
@@ -298,23 +349,35 @@ console.log(user.greet());
 		);
 
 		const testPath = path.join(srcDir, "test.ts");
+		// 创建一个只有一行代码的文件
 		fs.writeFileSync(
 			testPath,
 			`const someVariable = "test";
 `,
 		);
 
-		// 存在しない位置を指定
+		// 指定不存在的行号（文件只有1行，但指定第10行）
 		await expect(
 			findSymbolReferences({
 				tsconfigPath,
 				targetFilePath: testPath,
-				position: { line: 10, column: 1 }, // 存在しない行
+				position: { line: 10, column: 1 }, // 不存在的行
 			}),
 		).rejects.toThrow();
 	});
 
-	it("re-exportされたシンボルの参照を見つけることができる", async () => {
+	/**
+	 * 测试：能够找到被 re-export 的符号的引用
+	 * 
+	 * 验证函数能够：
+	 * - 找到原始定义位置
+	 * - 找到通过 re-export 重新导出的位置（包括别名导出）
+	 * - 找到通过 re-export 路径导入后的使用位置
+	 * 
+	 * 这个测试场景模拟了常见的模块组织方式：
+	 * utils.ts (原始定义) -> index.ts (re-export) -> app.ts (使用)
+	 */
+	it("能够找到被 re-export 的符号的引用", async () => {
 		const tsconfigPath = path.join(tempDir, "tsconfig.json");
 		const srcDir = path.join(tempDir, "src");
 		fs.mkdirSync(srcDir, { recursive: true });
@@ -341,7 +404,7 @@ console.log(user.greet());
 		const indexPath = path.join(srcDir, "index.ts");
 		const appPath = path.join(srcDir, "app.ts");
 
-		// utils.ts - オリジナルの定義
+		// utils.ts - 原始定义位置
 		fs.writeFileSync(
 			utilsPath,
 			`export function helper() {
@@ -352,15 +415,15 @@ export const CONSTANT = 42;
 `,
 		);
 
-		// index.ts - re-export
+		// index.ts - 通过 re-export 重新导出（包括别名导出）
 		fs.writeFileSync(
 			indexPath,
 			`export { helper, CONSTANT } from "./utils";
-export { helper as utilHelper } from "./utils"; // 別名でのre-export
+export { helper as utilHelper } from "./utils"; // 别名 re-export
 `,
 		);
 
-		// app.ts - re-export経由での使用
+		// app.ts - 通过 re-export 路径导入并使用
 		fs.writeFileSync(
 			appPath,
 			`import { helper, CONSTANT, utilHelper } from "./index";
@@ -371,31 +434,40 @@ console.log(utilHelper());
 `,
 		);
 
-		// helper関数の参照を検索
+		// 查找 helper 函数的引用
 		const result = await findSymbolReferences({
 			tsconfigPath,
 			targetFilePath: utilsPath,
-			position: { line: 1, column: 17 }, // "helper" の位置
+			position: { line: 1, column: 17 }, // "helper" 的位置
 		});
 
 		expect(result.definition).toBeTruthy();
 		expect(result.definition?.filePath).toBe(utilsPath);
 
-		// re-export文とインポート文、使用箇所での参照を含む
+		// 验证引用位置包括：re-export 语句、import 语句、使用位置
 		expect(result.references.length).toBeGreaterThanOrEqual(3);
 
-		// index.tsでのre-export
+		// 验证 index.ts 中的 re-export 引用
 		const reExportRefs = result.references.filter(
 			(ref) => ref.filePath === indexPath,
 		);
-		expect(reExportRefs.length).toBeGreaterThanOrEqual(2); // 通常のre-exportと別名でのre-export
+		expect(reExportRefs.length).toBeGreaterThanOrEqual(2); // 普通 re-export 和别名 re-export
 
-		// app.tsでの使用
+		// 验证 app.ts 中的使用
 		const appRefs = result.references.filter((ref) => ref.filePath === appPath);
 		expect(appRefs.length).toBeGreaterThanOrEqual(1);
 	});
 
-	it("循環参照があるファイル間での参照を見つけることができる", async () => {
+	/**
+	 * 测试：能够在有循环引用的文件间找到引用
+	 * 
+	 * 验证函数能够正确处理循环依赖的情况：
+	 * - moduleA 导入 moduleB
+	 * - moduleB 导入 moduleA
+	 * 
+	 * 即使存在循环引用，函数仍应能正确找到跨文件的符号引用。
+	 */
+	it("能够在有循环引用的文件间找到引用", async () => {
 		const tsconfigPath = path.join(tempDir, "tsconfig.json");
 		const srcDir = path.join(tempDir, "src");
 		fs.mkdirSync(srcDir, { recursive: true });
@@ -421,7 +493,7 @@ console.log(utilHelper());
 		const moduleAPath = path.join(srcDir, "moduleA.ts");
 		const moduleBPath = path.join(srcDir, "moduleB.ts");
 
-		// moduleA.ts - moduleBを参照
+		// moduleA.ts - 导入并引用 moduleB
 		fs.writeFileSync(
 			moduleAPath,
 			`import { functionB } from "./moduleB";
@@ -436,7 +508,7 @@ export function useB() {
 `,
 		);
 
-		// moduleB.ts - moduleAを参照（循環参照）
+		// moduleB.ts - 导入并引用 moduleA（形成循环引用）
 		fs.writeFileSync(
 			moduleBPath,
 			`import { functionA } from "./moduleA";
@@ -451,28 +523,36 @@ export function useA() {
 `,
 		);
 
-		// functionAの参照を検索
+		// 查找 functionA 的引用
 		const result = await findSymbolReferences({
 			tsconfigPath,
 			targetFilePath: moduleAPath,
-			position: { line: 3, column: 17 }, // "functionA" の位置
+			position: { line: 3, column: 17 }, // "functionA" 的位置
 		});
 
 		expect(result.definition).toBeTruthy();
 		expect(result.definition?.filePath).toBe(moduleAPath);
 
-		// moduleBからの参照を確認
+		// 验证 moduleB 中的引用（即使存在循环引用也能找到）
 		const moduleBRefs = result.references.filter(
 			(ref) => ref.filePath === moduleBPath,
 		);
 		expect(moduleBRefs.length).toBeGreaterThanOrEqual(1);
 
-		// useA関数内での使用を確認
+		// 验证 useA 函数中的使用
 		const useARef = moduleBRefs.find((ref) => ref.text.includes("functionA()"));
 		expect(useARef).toBeTruthy();
 	});
 
-	it("インターフェースの参照を見つけることができる", async () => {
+	/**
+	 * 测试：能够找到接口的引用
+	 * 
+	 * 验证函数能够：
+	 * - 找到接口定义位置
+	 * - 找到其他接口通过 extends 继承该接口的位置
+	 * - 找到其他文件中在类型注解（函数参数、变量声明等）中使用该接口的位置
+	 */
+	it("能够找到接口的引用", async () => {
 		const tsconfigPath = path.join(tempDir, "tsconfig.json");
 		const srcDir = path.join(tempDir, "src");
 		fs.mkdirSync(srcDir, { recursive: true });
@@ -498,6 +578,7 @@ export function useA() {
 		const typesPath = path.join(srcDir, "types.ts");
 		const implementationPath = path.join(srcDir, "implementation.ts");
 
+		// types.ts: 定义 UserData 接口，AdminData 接口继承 UserData
 		fs.writeFileSync(
 			typesPath,
 			`export interface UserData {
@@ -512,6 +593,7 @@ export interface AdminData extends UserData {
 `,
 		);
 
+		// implementation.ts: 在类型注解中使用 UserData 接口
 		fs.writeFileSync(
 			implementationPath,
 			`import { UserData, AdminData } from "./types";
@@ -538,29 +620,29 @@ processUser(adminData);
 `,
 		);
 
-		// UserData インターフェースの参照を検索
+		// 查找 UserData 接口的引用
 		const result = await findSymbolReferences({
 			tsconfigPath,
 			targetFilePath: typesPath,
-			position: { line: 1, column: 18 }, // "UserData" の位置
+			position: { line: 1, column: 18 }, // "UserData" 的位置
 		});
 
 		expect(result.definition).toBeTruthy();
 		expect(result.definition?.filePath).toBe(typesPath);
 
-		// 参照箇所を確認
+		// 验证引用位置
 		expect(result.references.length).toBeGreaterThanOrEqual(3);
 
-		// types.ts内での継承での参照
+		// 验证 types.ts 文件内继承中的引用（AdminData extends UserData）
 		const extendsRef = result.references.find(
 			(ref) => ref.filePath === typesPath && ref.text.includes("extends"),
 		);
 		expect(extendsRef).toBeTruthy();
 
-		// implementation.ts内での型注釈での参照
+		// 验证 implementation.ts 文件内类型注解中的引用
 		const typeAnnotationRefs = result.references.filter(
 			(ref) => ref.filePath === implementationPath,
 		);
-		expect(typeAnnotationRefs.length).toBeGreaterThanOrEqual(2); // 関数パラメータと変数宣言
+		expect(typeAnnotationRefs.length).toBeGreaterThanOrEqual(2); // 函数参数和变量声明
 	});
 });
